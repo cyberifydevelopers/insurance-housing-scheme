@@ -11,12 +11,18 @@ import time
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait, Select
 import httpx
+import tempfile
 
 
 async def job_scraper():
     chrome_options = Options()
+    chrome_options.add_argument("--headless=new")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument(
+        f"--user-data-dir={tempfile.mkdtemp()}"
+    )  # unique profile
+
     driver = webdriver.Chrome(
         service=Service(ChromeDriverManager().install()), options=chrome_options
     )
@@ -226,6 +232,9 @@ async def tacares_job_details():
             "Chrome/122.0.0.0 Safari/537.36"
         ),
         "Accept-Language": "en-US,en;q=0.9",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Referer": "https://www.google.com/",
+        "Connection": "keep-alive",
     }
     async with httpx.AsyncClient() as client:
         response = await client.get(url, headers=headers)
