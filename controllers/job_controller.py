@@ -20,9 +20,9 @@ router = APIRouter(prefix="/api/job")
 
 @router.get("/crsth-scrape")
 async def scrape_jobs():
-    is_job_exist = await Job.filter(title="crsth").first()
-    if is_job_exist:
-        raise HTTPException(400, "CRSTH already exists.")
+    # is_job_exist = await Job.filter(title="crsth").first()
+    # if is_job_exist:
+    #     raise HTTPException(400, "CRSTH already exists.")
     jobs = await job_scraper()
     filtered_jobs = await ai_job_filter(jobs) if jobs else []
     if filtered_jobs:
@@ -41,6 +41,7 @@ async def scrape_jobs():
     )
     return {
         "message": "CRSTH jobs scraping done",
+        "jobs":filtered_jobs
     }
 
 
