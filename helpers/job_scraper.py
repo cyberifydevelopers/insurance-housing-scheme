@@ -222,7 +222,6 @@ async def alacrity_job_detail(job_url):
     job["benefits"] = benefits
     return json.dumps(job, indent=2)
 
-
 async def tacares_job_details():
     url = "https://www.tacares.com/housing-support-specialist/"
     headers = {
@@ -236,21 +235,34 @@ async def tacares_job_details():
         "Referer": "https://www.google.com/",
         "Connection": "keep-alive",
     }
-    async with httpx.AsyncClient() as client:
-        response = await client.get(url, headers=headers)
+
+    async with httpx.AsyncClient(
+        follow_redirects=True, timeout=30.0, headers=headers
+    ) as client:
+        response = await client.get(url)
+        if response.status_code == 403:
+            raise Exception("Access denied (403) — site may be blocking AWS IPs")
         response.raise_for_status()
+
     soup = BeautifulSoup(response.text, "html.parser")
     content_div = soup.find("div", class_="bf-cpc-content")
     job_data = {}
+
+    if not content_div:
+        return {"error": "Job content not found, maybe blocked"}
+
     title_tag = content_div.find("strong")
     if title_tag:
         job_data["title"] = title_tag.get_text(strip=True)
+
     department = content_div.find("strong", string="Department:")
     if department and department.next_sibling:
         job_data["department"] = department.next_sibling.strip()
+
     reports_to = content_div.find("strong", string="Reports to:")
     if reports_to and reports_to.next_sibling:
         job_data["reports_to"] = reports_to.next_sibling.strip()
+
     job_summary = content_div.find("strong", string="Job Summary")
     if job_summary:
         job_data["job_summary"] = (
@@ -258,6 +270,7 @@ async def tacares_job_details():
             .get_text(" ", strip=True)
             .replace("Job Summary", "")
         )
+
     essential = content_div.find("strong", string="Essential Job Functions:")
     if essential:
         ul = essential.find_next("ul")
@@ -265,6 +278,7 @@ async def tacares_job_details():
             job_data["essential_functions"] = [
                 li.get_text(strip=True) for li in ul.find_all("li")
             ]
+
     minimum = content_div.find("strong", string="Minimum Requirements:")
     if minimum:
         ul = minimum.find_next("ul")
@@ -272,6 +286,7 @@ async def tacares_job_details():
             job_data["minimum_requirements"] = [
                 li.get_text(strip=True) for li in ul.find_all("li")
             ]
+
     disclaimer = content_div.find("strong", string="Disclaimer")
     if disclaimer:
         job_data["disclaimer"] = (
@@ -279,4 +294,5 @@ async def tacares_job_details():
             .get_text(" ", strip=True)
             .replace("Disclaimer", "")
         )
+
     return job_data
