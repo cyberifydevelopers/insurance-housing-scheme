@@ -39,10 +39,7 @@ async def scrape_jobs():
         title="crsth",
         jobs=jobs_json,
     )
-    return {
-        "message": "CRSTH jobs scraping done",
-        "jobs":filtered_jobs
-    }
+    return {"message": "CRSTH jobs scraping done", "jobs": filtered_jobs}
 
 
 @router.get("/alacrity-scrape")
@@ -74,17 +71,27 @@ async def tacares_scrape():
 async def get_jobs(position: str = "Housing Specialist", page: int = 1):
     url = f"https://indeed12.p.rapidapi.com/jobs/search?query={position}&fromage=7&jt=permanent"
     headers = {
-        "Content-Type": "application/json",
-        "x-rapidapi-host": "indeed12.p.rapidapi.com",
-        "x-rapidapi-key": os.environ.get("INDEED_API_KEY"),
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/122.0.0.0 Safari/537.36"
+        ),
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Referer": "https://www.google.com/",
+        "Connection": "keep-alive",
     }
+
     async with httpx.AsyncClient(timeout=30.0) as client:
         response = await client.get(url, headers=headers)
         try:
             data = response.json()
             hits = data.get("hits", [])
             if not hits:
-                return {"message": "No jobs found, try adjusting position, location, or filters.", "jobs": []}
+                return {
+                    "message": "No jobs found, try adjusting position, location, or filters.",
+                    "jobs": [],
+                }
             return {"jobs": hits}
         except ValueError:
             return {"error": "Invalid response from API", "content": response.text}
