@@ -12,7 +12,7 @@ from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait, Select
 import httpx
 import tempfile
-
+import os
 
 async def job_scraper():
     chrome_options = Options()
@@ -222,8 +222,19 @@ async def alacrity_job_detail(job_url):
     job["benefits"] = benefits
     return json.dumps(job, indent=2)
 
+
+
 async def tacares_job_details():
+    print(os.environ.get("SCRAPER_API_KEY"))
     url = "https://www.tacares.com/housing-support-specialist/"
+    scraper_api_url = "http://api.scraperapi.com"
+    params = {
+        "api_key": os.environ.get("SCRAPER_API_KEY"),
+        "url": url,
+        "country_code": "us",
+        "render": "false",     
+    }
+
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -236,12 +247,8 @@ async def tacares_job_details():
         "Connection": "keep-alive",
     }
 
-    async with httpx.AsyncClient(
-        follow_redirects=True, timeout=30.0, headers=headers
-    ) as client:
-        response = await client.get(url)
-        if response.status_code == 403:
-            raise Exception("Access denied (403) — site may be blocking AWS IPs")
+    async with httpx.AsyncClient(follow_redirects=True, timeout=30.0, headers=headers) as client:
+        response = await client.get(scraper_api_url, params=params)
         response.raise_for_status()
 
     soup = BeautifulSoup(response.text, "html.parser")
