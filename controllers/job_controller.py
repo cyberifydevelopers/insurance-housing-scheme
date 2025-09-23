@@ -67,34 +67,38 @@ async def tacares_scrape():
     return {"job_details": job_details, "db_id": job.id}
 
 
-@router.get("/indeed-jobs")
-async def get_jobs(position: str = "Housing Specialist", page: int = 1):
-    url = f"https://indeed12.p.rapidapi.com/jobs/search?query={position}&fromage=7&jt=permanent"
+async def fetch_jobs(position: str, page: int = 1):
+    url = f"https://indeed12.p.rapidapi.com/jobs/search?query={position}&fromage=7&jt=permanent&page={page}"
     headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/122.0.0.0 Safari/537.36"
-        ),
-        "Accept-Language": "en-US,en;q=0.9",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-        "Referer": "https://www.google.com/",
-        "Connection": "keep-alive",
+        "X-RapidAPI-Key": os.environ.get("INDEED_API_KEY"),
+        "X-RapidAPI-Host": "indeed12.p.rapidapi.com",
     }
-
     async with httpx.AsyncClient(timeout=30.0) as client:
         response = await client.get(url, headers=headers)
+        response.raise_for_status()
+        return response.json()
+
+
+@router.get("/indeed-jobs")
+async def get_all_jobs(position: str = "Housing Scheme"):
+    all_jobs = []
+    page = 1
+    while True:
         try:
-            data = response.json()
+            data = await fetch_jobs(position, page)
             hits = data.get("hits", [])
             if not hits:
-                return {
-                    "message": "No jobs found, try adjusting position, location, or filters.",
-                    "jobs": [],
-                }
-            return {"jobs": hits}
-        except ValueError:
-            return {"error": "Invalid response from API", "content": response.text}
+                break
+            all_jobs.extend(hits)
+            page += 1
+        except Exception as e:
+            print(f"Error on page {page}: {e}")
+            break
+    await Job.create(
+        title="indeed",
+        jobs=all_jobs,
+    )
+    return {"total_jobs": len(all_jobs), "jobs": all_jobs}
 
 
 @router.get("/get")

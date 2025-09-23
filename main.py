@@ -25,24 +25,24 @@ app.include_router(auth_controller.router, tags=["Users"])
 app.include_router(job_controller.router, tags=["Jobs"])
 
 
-async def job_update_cron_job():
-    print("Jobs updation start")
-    await crsth_job_update()
-    await alacrity_job_update()
-    await tacares_job_update()
-    print("Jobs updated successfully")
+# async def job_update_cron_job():
+#     print("Jobs updation start")
+#     await crsth_job_update()
+#     await alacrity_job_update()
+#     await tacares_job_update()
+#     print("Jobs updated successfully")
 
-def schedule_job():
-    asyncio.create_task(job_update_cron_job()) 
+# def schedule_job():
+#     asyncio.create_task(job_update_cron_job()) 
 
-scheduler = AsyncIOScheduler()
-scheduler.add_job(
-    schedule_job,
-    trigger="cron",
-    hour=0,
-    minute=0,
-)
-scheduler.start()
+# scheduler = AsyncIOScheduler()
+# scheduler.add_job(
+#     schedule_job,
+#     trigger="cron",
+#     hour=0,
+#     minute=0,
+# )
+# scheduler.start()
 
 
 @app.get("/")
