@@ -6,6 +6,7 @@ from argon2 import PasswordHasher
 import jwt
 import os
 import datetime
+from helpers.get_current_user import CurrentUser
 
 router = APIRouter(prefix="/api/auth")
 ph = PasswordHasher()
@@ -49,3 +50,8 @@ async def login(data: LoginPayload):
         ),
         "userType": user.type,
     }
+
+
+@router.get("/me")
+async def signup(user: CurrentUser):
+    return {"data": user}

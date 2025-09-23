@@ -14,13 +14,6 @@ from fastapi import APIRouter, HTTPException
 import json
 import httpx
 import os
-from pydantic import BaseModel
-
-
-class JobCreate(BaseModel):
-    title: str
-    jobs: dict
-
 
 router = APIRouter(prefix="/api/job")
 
@@ -74,38 +67,65 @@ async def tacares_scrape():
     return {"job_details": job_details, "db_id": job.id}
 
 
-async def fetch_jobs(position: str, page: int = 1):
-    url = f"https://indeed12.p.rapidapi.com/jobs/search?query={position}&fromage=7&jt=permanent&page={page}"
-    headers = {
-        "X-RapidAPI-Key": os.environ.get("INDEED_API_KEY"),
-        "X-RapidAPI-Host": "indeed12.p.rapidapi.com",
-    }
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        response = await client.get(url, headers=headers)
-        response.raise_for_status()
-        return response.json()
-
 
 @router.get("/indeed-jobs")
-async def get_all_jobs(position: str = "Housing Scheme"):
-    all_jobs = []
-    page = 1
-    while True:
+async def get_jobs(position: str = "Housing Specialist", page: int = 1):
+    url = f"https://indeed12.p.rapidapi.com/jobs/search?query={position}&fromage=7&jt=permanent&page={page}"
+    
+    headers = {
+        "X-RapidAPI-Key": os.environ.get('INDEED_API_KEY'),
+        "X-RapidAPI-Host": "indeed12.p.rapidapi.com"
+    }
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        response = await client.get(url, headers=headers)
+        print(response.status_code, response.text)
+
         try:
-            data = await fetch_jobs(position, page)
+            data = response.json()
             hits = data.get("hits", [])
             if not hits:
-                break
-            all_jobs.extend(hits)
-            page += 1
-        except Exception as e:
-            print(f"Error on page {page}: {e}")
-            break
-    await Job.create(
-        title="indeed",
-        jobs={"items": all_jobs},
-    )
-    return {"total_jobs": len(all_jobs), "jobs": all_jobs}
+                return {
+                    "message": "No jobs found, try adjusting position, location, or filters.",
+                    "jobs": [],
+                }
+            return {"jobs": hits}
+        except ValueError:
+            return {"error": "Invalid response from API", "content": response.text}
+
+
+# async def fetch_jobs(position: str, page: int = 1):
+#     url = f"https://indeed12.p.rapidapi.com/jobs/search?query={position}&fromage=7&jt=permanent&page={page}"
+#     headers = {
+#         "X-RapidAPI-Key": os.environ.get("INDEED_API_KEY"),
+#         "X-RapidAPI-Host": "indeed12.p.rapidapi.com",
+#     }
+#     async with httpx.AsyncClient(timeout=30.0) as client:
+#         response = await client.get(url, headers=headers)
+#         response.raise_for_status()
+#         return response.json()
+
+
+# @router.get("/indeed-jobs")
+# async def get_all_jobs(position: str = "Housing Scheme"):
+#     all_jobs = []
+#     page = 1
+#     while True:
+#         try:
+#             data = await fetch_jobs(position, page)
+#             hits = data.get("hits", [])
+#             if not hits:
+#                 break
+#             all_jobs.extend(hits)
+#             page += 1
+#         except Exception as e:
+#             print(f"Error on page {page}: {e}")
+#             break
+#     await Job.create(
+#         title="indeed",
+#         jobs={"items": all_jobs},
+#     )
+#     return {"total_jobs": len(all_jobs), "jobs": all_jobs}
 
 
 @router.get("/get")
@@ -114,12 +134,3 @@ async def jobs():
     if not jobs:
         raise HTTPException(404, "Jobs not found.")
     return {"jobs": jobs}
-
-
-@router.post("/jobs")
-async def create_job(job_data: JobCreate):
-    try:
-        job = await Job.create(title=job_data.title, jobs=job_data.jobs)
-        return {"message": "Job created successfully", "job": job}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
