@@ -15,9 +15,12 @@ import json
 import httpx
 import os
 from pydantic import BaseModel
+
+
 class JobCreate(BaseModel):
     title: str
-    jobs: dict   
+    jobs: dict
+
 
 router = APIRouter(prefix="/api/job")
 
@@ -100,7 +103,7 @@ async def get_all_jobs(position: str = "Housing Scheme"):
             break
     await Job.create(
         title="indeed",
-        jobs=all_jobs,
+        jobs={"items": all_jobs},
     )
     return {"total_jobs": len(all_jobs), "jobs": all_jobs}
 
@@ -112,13 +115,11 @@ async def jobs():
         raise HTTPException(404, "Jobs not found.")
     return {"jobs": jobs}
 
+
 @router.post("/jobs")
 async def create_job(job_data: JobCreate):
     try:
-        job = await Job.create(
-            title=job_data.title,
-            jobs=job_data.jobs
-        )
+        job = await Job.create(title=job_data.title, jobs=job_data.jobs)
         return {"message": "Job created successfully", "job": job}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
