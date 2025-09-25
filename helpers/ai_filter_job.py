@@ -16,7 +16,7 @@ async def ai_job_filter(jobs):
     response_schema = ResponseSchema(
         name="titles",
         description=(
-            "An array of job titles related to housing, relocation, residence, "
+            "An array of job titles related to Residence Specialist, Corporate Housing Specialist, Relocation Specialist"
             "temporary housing. Ignore all unrelated jobs."
         ),
     )
