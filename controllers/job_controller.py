@@ -75,30 +75,30 @@ async def tacares_scrape():
     return {"job_details": job_details, "db_id": job.id}
 
 
-@router.get("/indeed-jobs")
-async def get_jobs(position: str = "Housing Specialist", page: int = 1):
-    url = f"https://indeed12.p.rapidapi.com/jobs/search?query={position}&fromage=7&jt=permanent&page={page}"
+# @router.get("/indeed-jobs")
+# async def get_jobs(position: str = "Housing Specialist", page: int = 1):
+#     url = f"https://indeed12.p.rapidapi.com/jobs/search?query={position}&fromage=7&jt=permanent&page={page}"
 
-    headers = {
-        "X-RapidAPI-Key": os.environ.get("INDEED_API_KEY"),
-        "X-RapidAPI-Host": "indeed12.p.rapidapi.com",
-    }
+#     headers = {
+#         "X-RapidAPI-Key": os.environ.get("INDEED_API_KEY"),
+#         "X-RapidAPI-Host": "indeed12.p.rapidapi.com",
+#     }
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        response = await client.get(url, headers=headers)
-        print(response.status_code, response.text)
+#     async with httpx.AsyncClient(timeout=30.0) as client:
+#         response = await client.get(url, headers=headers)
+#         print(response.status_code, response.text)
 
-        try:
-            data = response.json()
-            hits = data.get("hits", [])
-            if not hits:
-                return {
-                    "message": "No jobs found, try adjusting position, location, or filters.",
-                    "jobs": [],
-                }
-            return {"jobs": hits}
-        except ValueError:
-            return {"error": "Invalid response from API", "content": response.text}
+#         try:
+#             data = response.json()
+#             hits = data.get("hits", [])
+#             if not hits:
+#                 return {
+#                     "message": "No jobs found, try adjusting position, location, or filters.",
+#                     "jobs": [],
+#                 }
+#             return {"jobs": hits}
+#         except ValueError:
+#             return {"error": "Invalid response from API", "content": response.text}
 
 
 @router.get("/get-crsth-urls")
@@ -124,38 +124,43 @@ async def delete_job(id: int):
     return {"message": "Job deleted successfully"}
 
 
-# async def fetch_jobs(position: str, page: int = 1):
-#     url = f"https://indeed12.p.rapidapi.com/jobs/search?query={position}&fromage=7&jt=permanent&page={page}"
-#     headers = {
-#         "X-RapidAPI-Key": os.environ.get("INDEED_API_KEY"),
-#         "X-RapidAPI-Host": "indeed12.p.rapidapi.com",
-#     }
-#     async with httpx.AsyncClient(timeout=30.0) as client:
-#         response = await client.get(url, headers=headers)
-#         response.raise_for_status()
-#         return response.json()
+async def fetch_jobs(position: str, page: int = 1):
+    url = f"https://indeed12.p.rapidapi.com/jobs/search?query={position}&fromage=7&jt=permanent&page={page}"
+    headers = {
+        "X-RapidAPI-Key": os.environ.get("INDEED_API_KEY"),
+        "X-RapidAPI-Host": "indeed12.p.rapidapi.com",
+    }
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        response = await client.get(url, headers=headers)
+        response.raise_for_status()
+        return response.json()
 
 
-# @router.get("/indeed-jobs")
-# async def get_all_jobs(position: str = "Housing Scheme"):
-#     all_jobs = []
-#     page = 1
-#     while True:
-#         try:
-#             data = await fetch_jobs(position, page)
-#             hits = data.get("hits", [])
-#             if not hits:
-#                 break
-#             all_jobs.extend(hits)
-#             page += 1
-#         except Exception as e:
-#             print(f"Error on page {page}: {e}")
-#             break
-#     await Job.create(
-#         title="indeed",
-#         jobs={"items": all_jobs},
-#     )
-#     return {"total_jobs": len(all_jobs), "jobs": all_jobs}
+@router.get("/indeed-jobs")
+async def get_all_jobs(position: str = "Housing Scheme"):
+    all_jobs = []
+    page = 1
+    while True:
+        try:
+            data = await fetch_jobs(position, page)
+            hits = data.get("hits", [])
+            if not hits:
+                break
+            all_jobs.extend(hits)
+            page += 1
+        except Exception as e:
+            print(f"Error on page {page}: {e}")
+            break
+    is_job_exists = await Job.filter(title='indeed').first()
+    if is_job_exists:
+        is_job_exists.jobs = all_jobs
+        await is_job_exists.save()
+    else:
+        await Job.create(
+            title="indeed",
+            jobs={"items": all_jobs},
+        )
+    return {"total_jobs": len(all_jobs), "jobs": all_jobs}
 
 
 @router.get("/get")

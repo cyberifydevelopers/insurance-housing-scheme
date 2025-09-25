@@ -17,14 +17,14 @@ async def alacrity_job_filter(jobs):
     response_schema = ResponseSchema(
         name="titles",
         description="An array of job titles that match housing-related jobs "
-        "(keywords: Housing, Relocation, Residence, Temporary Housing, Specialist).",
+        "(keywords: Housing, Relocation, Residence, Temporary Housing).",
     )
     output_parser = StructuredOutputParser.from_response_schemas([response_schema])
     format_instructions = output_parser.get_format_instructions()
 
     system_message = SystemMessagePromptTemplate.from_template(
         "You are an expert job filter. Only select jobs if their titles are clearly related "
-        "to housing schemes, relocation, residence, temporary housing, or specialist roles. "
+        "to housing schemes, relocation, residence, temporary housing. "
         "Ignore all unrelated jobs."
     )
 

@@ -17,14 +17,14 @@ async def ai_job_filter(jobs):
         name="titles",
         description=(
             "An array of job titles related to housing, relocation, residence, "
-            "temporary housing, or specialist roles. Ignore all unrelated jobs."
+            "temporary housing. Ignore all unrelated jobs."
         ),
     )
     output_parser = StructuredOutputParser.from_response_schemas([response_schema])
     format_instructions = output_parser.get_format_instructions()
     system_message = SystemMessagePromptTemplate.from_template(
         "You are an expert job filter. Only select jobs if their titles are clearly related "
-        "to housing schemes, relocation, residence, temporary housing, or specialist roles. "
+        "to housing schemes, relocation, residence, temporary housing."
         "Do not include unrelated job titles."
     )
     human_message = HumanMessagePromptTemplate.from_template(
