@@ -50,6 +50,6 @@ def say_hello():
     return {"message": "Welcome from server!"}
 
 
-@app.on_event("shutdown")
-def shutdown_event():
-    scheduler.shutdown()
+# @app.on_event("shutdown")
+# def shutdown_event():
+#     scheduler.shutdown()

@@ -14,17 +14,23 @@ llm = ChatOpenAI(
 
 async def ai_job_filter(jobs):
     response_schema = ResponseSchema(
-        name="titles", description="An array of job titles related to housing schemes"
+        name="titles",
+        description=(
+            "An array of job titles related to housing, relocation, residence, "
+            "temporary housing, or specialist roles. Ignore all unrelated jobs."
+        ),
     )
     output_parser = StructuredOutputParser.from_response_schemas([response_schema])
     format_instructions = output_parser.get_format_instructions()
     system_message = SystemMessagePromptTemplate.from_template(
-        "You are an expert job filter. Only extract jobs related to housing schemes or temporary housing."
+        "You are an expert job filter. Only select jobs if their titles are clearly related "
+        "to housing schemes, relocation, residence, temporary housing, or specialist roles. "
+        "Do not include unrelated job titles."
     )
     human_message = HumanMessagePromptTemplate.from_template(
         "Given the following jobs:\n{jobs_json}\n\n"
-        "Return a JSON object with a single key 'titles' containing an array of job titles that are related to housing schemes only. "
-        "Use the following format:\n{format_instructions}"
+        "Return a JSON object with a single key 'titles' containing only the job titles "
+        "that match housing-related roles. Use the following format:\n{format_instructions}"
     )
     prompt = ChatPromptTemplate.from_messages([system_message, human_message])
     formatted_prompt = prompt.format_prompt(
@@ -33,7 +39,7 @@ async def ai_job_filter(jobs):
     response = await llm.agenerate([formatted_prompt.to_messages()])
     try:
         result = output_parser.parse(response.generations[0][0].message.content)
-        print("result", result)
+        print("LLM result:", result)  # Debug log
         titles_set = set(result.get("titles", []))
         return [job for job in jobs if job["title"] in titles_set]
     except Exception as e:
