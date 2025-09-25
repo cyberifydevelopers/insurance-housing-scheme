@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 load_dotenv()
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from controllers import job_controller, auth_controller
+from controllers import job_controller, auth_controller,document_controller
 from helpers.lifespan import lifespan
 from apscheduler.schedulers.background import BackgroundScheduler
 import time
@@ -23,6 +23,7 @@ app.add_middleware(
 
 app.include_router(auth_controller.router, tags=["Users"])
 app.include_router(job_controller.router, tags=["Jobs"])
+app.include_router(document_controller.router, tags=["Documents"])
 
 
 # async def job_update_cron_job():

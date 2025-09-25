@@ -1,6 +1,7 @@
 from tortoise import Tortoise
 import os
 
+
 async def lifespan(_):
     await Tortoise.init(
         db_url=os.environ.get("DATABASE_URL"),
@@ -8,6 +9,7 @@ async def lifespan(_):
             "models": [
                 "models.user",
                 "models.jobs",
+                "models.documents",
             ]
         },
     )
