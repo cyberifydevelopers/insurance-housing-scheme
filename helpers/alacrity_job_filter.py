@@ -24,7 +24,7 @@ async def alacrity_job_filter(jobs):
 
     system_message = SystemMessagePromptTemplate.from_template(
         "You are an expert job filter. Only select jobs if their titles are clearly related "
-        "to Relocation Specialist, Housing Account Manager. "
+        "to Relocation Specialist, Housing Account Manager, Residence Specialist, Corporate Housing Specialist . "
         "Ignore all unrelated jobs."
     )
 

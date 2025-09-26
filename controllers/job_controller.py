@@ -48,6 +48,7 @@ async def scrape_jobs():
 @router.get("/alacrity-scrape")
 async def alacrity_scrap():
     jobs = await alacrity_jobs()
+    print(jobs)
     ai_filtered_jobs = []
     if jobs:
         ai_filtered_jobs = await alacrity_job_filter(jobs)
