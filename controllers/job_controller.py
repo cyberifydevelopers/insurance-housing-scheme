@@ -169,3 +169,11 @@ async def jobs():
     if not jobs:
         raise HTTPException(404, "Jobs not found.")
     return {"jobs": jobs}
+
+
+@router.get("/get-title")
+async def get_title():
+    jobs = await Job.all().values("id", "title")
+    if not jobs:
+        raise HTTPException(status_code=404, detail="Jobs not found.")
+    return {"jobs": jobs}
