@@ -19,19 +19,15 @@ router = APIRouter(prefix="/api/document")
 class DocumentIn(BaseModel):
     id: int
     title: str
-    jobId: int
     videos: list
     pdfs: list
 
 
 @router.post("/save")
 async def save_document(doc: DocumentIn):
-    job = await Job.get_or_none(id=doc.jobId)
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
     if doc.id == 0:
         document = await Documents.create(
-            title=doc.title, job=job, videos=doc.videos, pdf=doc.pdfs
+            title=doc.title, videos=doc.videos, pdf=doc.pdfs
         )
         return {"message": "Document created successfully", "document_id": document.id}
     else:
@@ -39,7 +35,6 @@ async def save_document(doc: DocumentIn):
         if not existing_doc:
             raise HTTPException(status_code=404, detail="Document not found")
         existing_doc.title = doc.title
-        existing_doc.job = job
         existing_doc.videos = doc.videos
         existing_doc.pdf = doc.pdfs
         await existing_doc.save()
@@ -54,12 +49,10 @@ async def get_docs():
     documents = await Documents.all()
     result = []
     for doc in documents:
-        job = await Job.filter(id=doc.job_id).first()
         result.append(
             {
                 "id": doc.id,
                 "title": doc.title,
-                "job": {"id": job.id, "title": job.title} if job else None,
                 "videos": doc.videos or [],  
                 "pdfs": doc.pdf or [], 
             }
@@ -101,10 +94,9 @@ async def upload_file(file: UploadFile = File(...), folder_name: str = Form(...)
             await s3_client.put_object(
                 Bucket=bucket_name,
                 Key=s3_key,
-                Body=await file.read(),  # or stream with async for large files
+                Body=await file.read(),  
                 ContentType=file.content_type or "application/octet-stream",
             )
-
         file_url = f"https://{bucket_name}.s3.{region}.amazonaws.com/{s3_key}"
         return {
             "success": True,
@@ -112,6 +104,5 @@ async def upload_file(file: UploadFile = File(...), folder_name: str = Form(...)
             "file_url": file_url,
             "key": s3_key,
         }
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
