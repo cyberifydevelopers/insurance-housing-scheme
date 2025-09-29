@@ -1,6 +1,6 @@
 from tortoise import Tortoise
 import os
-
+from models import courses, steps, trainingmaterial
 
 async def lifespan(_):
     await Tortoise.init(
@@ -9,7 +9,9 @@ async def lifespan(_):
             "models": [
                 "models.user",
                 "models.jobs",
-                "models.documents",
+                "models.courses",
+                "models.steps",
+                "models.trainingmaterial",
             ]
         },
     )

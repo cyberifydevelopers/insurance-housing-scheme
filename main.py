@@ -1,15 +1,10 @@
 from dotenv import load_dotenv
-
 load_dotenv()
+from controllers import traning_material_controller
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from controllers import job_controller, auth_controller,document_controller
+from controllers import job_controller, auth_controller,course_controller,steps_controller
 from helpers.lifespan import lifespan
-from apscheduler.schedulers.background import BackgroundScheduler
-import time
-from helpers.jobs import alacrity_job_update, crsth_job_update, tacares_job_update
-import asyncio
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 app = FastAPI(lifespan=lifespan)
 
@@ -23,7 +18,9 @@ app.add_middleware(
 
 app.include_router(auth_controller.router, tags=["Users"])
 app.include_router(job_controller.router, tags=["Jobs"])
-app.include_router(document_controller.router, tags=["Documents"])
+app.include_router(course_controller.router, tags=["Course"])
+app.include_router(steps_controller.router, tags=["Steps"])
+app.include_router(traning_material_controller.router, tags=["Traning Material"])
 
 
 # async def job_update_cron_job():
