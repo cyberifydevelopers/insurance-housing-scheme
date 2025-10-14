@@ -14,9 +14,16 @@ from fastapi import APIRouter, HTTPException
 import json
 import httpx
 import os
-from helpers.find_jobs import find_crths_job,find_alacrity_job
+from helpers.find_jobs import find_crths_job, find_alacrity_job
+from pydantic import BaseModel
+from typing import List
+from helpers.apply_jobs import alacrity_job_apply, crsth_job_apply
 
 router = APIRouter(prefix="/api/job")
+
+
+class LinkRequest(BaseModel):
+    data: List[str]  # array of links
 
 
 @router.get("/crsth-scrape")
@@ -48,15 +55,16 @@ async def scrape_jobs():
 @router.get("/alacrity-scrape")
 async def alacrity_scrap():
     jobs = await alacrity_jobs()
-    print(jobs)
     ai_filtered_jobs = []
     if jobs:
         ai_filtered_jobs = await alacrity_job_filter(jobs)
+        print("Ai filtered jobs", ai_filtered_jobs)
         for job in ai_filtered_jobs:
             job["detail"] = await alacrity_job_detail(job["link"])
-            urls = await find_alacrity_job(job)
-            job["other_sites"] = urls
+            print("job detail", job["detail"])
+
     jobs_json = json.dumps(ai_filtered_jobs, ensure_ascii=False, indent=4)
+    print("jobs_json", jobs_json)
     is_job_exists = await Job.filter(title="alacrity").first()
     if is_job_exists:
         is_job_exists.jobs = jobs_json
@@ -74,6 +82,23 @@ async def tacares_scrape():
     job_details = await tacares_job_details()
     job = await Job.create(title="tacares", jobs=job_details)
     return {"job_details": job_details, "db_id": job.id}
+
+
+@router.post("/apply-on-alacrity")
+async def apply_on_alacrity(payload: LinkRequest):
+    links = payload.data
+    # for link in links:
+    res = alacrity_job_apply(links[5])
+    print(res)
+    return {"received": links, "count": len(links)}
+
+
+@router.post("/apply-on-crsth")
+async def apply_on_alacrity(payload: LinkRequest):
+    links = payload.data
+    res = crsth_job_apply(links[0])
+    print(res)
+    return {"received": links, "count": len(links)}
 
 
 # @router.get("/indeed-jobs")
@@ -121,7 +146,7 @@ async def delete_job(id: int):
     job = await Job.get_or_none(id=id)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
-    await job.delete() 
+    await job.delete()
     return {"message": "Job deleted successfully"}
 
 
@@ -152,7 +177,7 @@ async def get_all_jobs(position: str = "Housing Scheme"):
         except Exception as e:
             print(f"Error on page {page}: {e}")
             break
-    is_job_exists = await Job.filter(title='indeed').first()
+    is_job_exists = await Job.filter(title="indeed").first()
     if is_job_exists:
         is_job_exists.jobs = all_jobs
         await is_job_exists.save()
@@ -170,4 +195,3 @@ async def jobs():
     if not jobs:
         raise HTTPException(404, "Jobs not found.")
     return {"jobs": jobs}
-

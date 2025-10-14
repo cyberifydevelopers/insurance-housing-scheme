@@ -1,0 +1,9 @@
+pip install undetected-chromedriver
+pip install reportlab
+pip install pydub
+%pip install openai-whisper
+%pip install torch
+%pip install imageio[ffmpeg]
+pip install SpeechRecognition pydub
+pip install pocketsphinx
+pip install SpeechRecognition pocketsphinx

@@ -9,40 +9,44 @@ from langchain.prompts import (
 from langchain.output_parsers import StructuredOutputParser, ResponseSchema
 
 llm = ChatOpenAI(
-    model="gpt-4.1-mini", temperature=0, api_key=os.environ.get("OPENAI_API_KEY")
+    model="gpt-4o-mini",  # Use a recent small model
+    temperature=0,
+    api_key=os.environ.get("OPENAI_API_KEY")
 )
 
 
 async def alacrity_job_filter(jobs):
     response_schema = ResponseSchema(
         name="titles",
-        description="An array of job titles that match housing-related jobs "
-        "(keywords: Relocation Specialist, Housing Account Manager).",
+        description="A list of job titles related to housing (e.g., Relocation Specialist, Housing Account Manager, etc.)"
     )
     output_parser = StructuredOutputParser.from_response_schemas([response_schema])
     format_instructions = output_parser.get_format_instructions()
-
     system_message = SystemMessagePromptTemplate.from_template(
-        "You are an expert job filter. Only select jobs if their titles are clearly related "
-        "to Relocation Specialist, Housing Account Manager, Residence Specialist, Corporate Housing Specialist . "
-        "Ignore all unrelated jobs."
+        "You are a precise job filter. Only include jobs if the title clearly relates to housing — "
+        "for example: Relocation Specialist, Housing Account Manager, Residence Specialist, Residential Litigation"
+        "Corporate Housing Specialist, or similar. Ignore unrelated ones."
     )
-
     human_message = HumanMessagePromptTemplate.from_template(
-        "Given the following jobs:\n{jobs_json}\n\n"
-        "Return a JSON object with a single key 'titles' containing only the job titles "
-        "that match housing-related roles. Use the following format:\n{format_instructions}"
+        "Here is a list of jobs:\n\n{jobs_json}\n\n"
+        "Return JSON in this format:\n{format_instructions}"
     )
-
     prompt = ChatPromptTemplate.from_messages([system_message, human_message])
     formatted_prompt = prompt.format_prompt(
         jobs_json=json.dumps(jobs, indent=2), format_instructions=format_instructions
     )
-
     response = await llm.agenerate([formatted_prompt.to_messages()])
+    content = response.generations[0][0].message.content.strip()
     try:
-        result = output_parser.parse(response.generations[0][0].message.content)
-        titles_set = set(result.get("titles", []))
-        return [job for job in jobs if job["title"] in titles_set]
+        parsed = output_parser.parse(content)
     except Exception:
-        return []
+        try:
+            parsed = json.loads(content)
+        except Exception:
+            print("⚠️ Could not parse response:", content)
+            return []
+    titles = [t.strip().lower() for t in parsed.get("titles", [])]
+    filtered = [
+        job for job in jobs if job.get("title", "").strip().lower() in titles
+    ]
+    return filtered
