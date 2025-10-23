@@ -3,7 +3,7 @@ load_dotenv()
 from controllers import traning_material_controller
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from controllers import job_controller, auth_controller,course_controller,steps_controller
+from controllers import job_controller, auth_controller,course_controller,steps_controller,registration_controller
 from helpers.lifespan import lifespan
 
 app = FastAPI(lifespan=lifespan)
@@ -21,6 +21,7 @@ app.include_router(job_controller.router, tags=["Jobs"])
 app.include_router(course_controller.router, tags=["Course"])
 app.include_router(steps_controller.router, tags=["Steps"])
 app.include_router(traning_material_controller.router, tags=["Traning Material"])
+app.include_router(registration_controller.router, tags=["Registration"])
 
 
 # async def job_update_cron_job():

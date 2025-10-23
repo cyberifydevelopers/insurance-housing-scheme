@@ -28,6 +28,7 @@ async def lifespan(app):
                 "models.courses",
                 "models.steps",
                 "models.trainingmaterial",
+                "models.user_registration",
             ]
         },
     )
