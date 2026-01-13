@@ -40,7 +40,6 @@ async def find_alacrity_job(job: dict):
             location = detail["job_details"]["job_location"]
     except Exception:
         pass
-
     parts = [title]
     if company:
         parts.append(company)

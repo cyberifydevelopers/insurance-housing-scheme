@@ -1,0 +1,4 @@
+
+1.-> after uploading all docs make submit button disable so that user cannot reupload it mistakenly
+
+<a href="http://13.60.11.39/login

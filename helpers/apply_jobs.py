@@ -15,6 +15,7 @@ import whisper
 from pydub import AudioSegment
 import speech_recognition as sr
 from pydub.utils import which
+
 print("🎵 FFmpeg found at:", which("ffmpeg"))
 
 

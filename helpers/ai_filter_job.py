@@ -6,8 +6,8 @@ from langchain.prompts import (
     SystemMessagePromptTemplate,
     HumanMessagePromptTemplate,
 )
-from langchain.output_parsers import StructuredOutputParser, ResponseSchema
 
+from langchain.output_parsers import StructuredOutputParser, ResponseSchema
 llm = ChatOpenAI(
     model="gpt-4.1-mini", temperature=0, api_key=os.environ.get("OPENAI_API_KEY")
 )

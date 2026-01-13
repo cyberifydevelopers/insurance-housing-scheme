@@ -43,6 +43,7 @@ async def register_user(
 
     # Generate random password
     password = generate_password()
+    print(password)
     hashed_password = hash_password(password)
 
     # Create user

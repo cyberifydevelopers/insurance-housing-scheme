@@ -254,6 +254,7 @@ async def tacares_job_details():
     soup = BeautifulSoup(response.text, "html.parser")
     content_div = soup.find("div", class_="bf-cpc-content")
     job_data = {}
+    job_data["url"] = url
 
     if not content_div:
         return {"error": "Job content not found, maybe blocked"}

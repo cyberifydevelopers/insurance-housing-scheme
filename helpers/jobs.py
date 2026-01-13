@@ -1,6 +1,6 @@
 from models.jobs import Job
 from helpers.job_scraper import (
-    job_scraper,
+    job_scraper, # crsth job scrapper 
     description_scraper,
     alacrity_jobs,
     alacrity_job_detail,

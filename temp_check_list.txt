@@ -1,0 +1,22 @@
+
+| Step | Description                        | Key Function                                     |
+| ---- | ---------------------------------- | ------------------------------------------------ |
+| 1    | Fetch user’s checklist             | `CheckList.filter(user_id=user_id)`              |
+| 2    | For each doc, get file path & type | `Document.get_or_none()`                         |
+| 3    | Extract text for text-based docs   | `get_text()`                                     |
+| 4    | Send docs for AI verification      | `verify_docs()`                                  |
+| 5    | Verify via AI models               | `ai_documents_checker()` & `image_doc_checker()` |
+| 6    | Update DB with new statuses        | `.save()` on `CheckList`                         |
+| 7    | Email user if any doc failed       | `send_document_followup_email()`                 |
+| 8    | Return verification results        | JSON response                                    |
+
+
+
+
+
+
+task to be completed now:
+1. send follow up email on clearning interview and if any docs not matches?
+2. send email to client as well while submitted for security review
+3. connect these two with frontend and reject button functionality. 
+
