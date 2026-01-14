@@ -11,6 +11,7 @@ from helpers.job_scraper import (
     alacrity_jobs,
     alacrity_job_detail,
     tacares_job_details,
+    enrich_jobs_with_details,
 )
 from helpers.alacrity_job_filter import alacrity_job_filter
 from models.jobs import Job
@@ -46,24 +47,27 @@ def find_new_jobs(old_jobs, new_jobs, key="url"):
 @router.get("/crsth-scrape")
 async def scrape_jobs():
     jobs = await job_scraper()
-    filtered_jobs = await ai_job_filter(jobs) if jobs else []
-    if filtered_jobs:
-        descriptions = await asyncio.gather(
-            *(description_scraper(job["url"]) for job in filtered_jobs)
-        )
-        for job, full_description in zip(filtered_jobs, descriptions):
-            structured_description = " ".join(
-                p.strip() for p in full_description.split("\n") if p.strip()
-            )
-            job["detail"] = structured_description
-        for job in filtered_jobs:
-            urls = await find_crths_job(job)
-            job["other_sites"] = urls
+    jobs =await enrich_jobs_with_details(jobs)
+
+    # filtered_jobs = await ai_job_filter(jobs) if jobs else []
+    # if filtered_jobs:
+    #     descriptions = await asyncio.gather(
+    #         *(description_scraper(job["url"]) for job in filtered_jobs)
+    #     )
+    #     for job, full_description in zip(filtered_jobs, descriptions):
+    #         structured_description = " ".join(
+    #             p.strip() for p in full_description.split("\n") if p.strip()
+    #         )
+    #         job["detail"] = structured_description
+        # for job in filtered_jobs:
+        #     urls = await find_crths_job(job)
+        #     job["other_sites"] = urls
     # jobs_json = json.dumps(filtered_jobs, ensure_ascii=False, indent=4)
-    # existing_job = await Job.filter(title="crsth").first()
-    # if existing_job:
-    #     existing_job.jobs = jobs_json
-    #     await existing_job.save()
+    jobs_json = json.dumps(jobs, ensure_ascii=False, indent=4)
+    existing_job = await Job.filter(title="crsth").first()
+    if existing_job:
+        existing_job.jobs = jobs_json
+        await existing_job.save()
     # else:
     #     await Job.create(title="crsth", jobs=jobs_json)
     # return {"message": "CRSTH jobs scraping done", "jobs": filtered_jobs}
@@ -78,13 +82,14 @@ async def scrape_jobs():
     if existing_job and existing_job.jobs:
         old_jobs = json.loads(existing_job.jobs)
 
-    new_jobs = find_new_jobs(old_jobs, filtered_jobs, key="url")
+    new_jobs = find_new_jobs(old_jobs, jobs, key="url")
 
     # Send email ONLY if new jobs found
     if new_jobs:
         email_service.send_new_jobs_email(to_email=notify_email, jobs=new_jobs)
 
-    jobs_json = json.dumps(filtered_jobs, ensure_ascii=False, indent=4)
+    # jobs_json = json.dumps(filtered_jobs, ensure_ascii=False, indent=4)
+    jobs_json = json.dumps(jobs, ensure_ascii=False, indent=4)
     if existing_job:
         existing_job.jobs = jobs_json
         await existing_job.save()
@@ -93,7 +98,7 @@ async def scrape_jobs():
     return {
     "message": "CRSTH jobs scraping done",
     "new_jobs_found": len(new_jobs),
-    "jobs": filtered_jobs
+    "jobs": jobs
 }
 
 
