@@ -94,6 +94,7 @@ import os
 
 async def job_scraper():
     chrome_options = Options()
+    chrome_options.binary_location = "/usr/bin/google-chrome" # comment this for windows 
     chrome_options.add_argument("--headless=True")  # Uncomment for production
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
