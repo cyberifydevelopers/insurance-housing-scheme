@@ -44,62 +44,157 @@ def find_new_jobs(old_jobs, new_jobs, key="url"):
     return [job for job in new_jobs if job.get(key) and job.get(key) not in old_urls]
 
 
+
+def transform_job_for_frontend(job: dict) -> dict:
+    return {
+        "job_title": job.get("title"),
+        "job_details": {
+            "job_location": job.get("location"),
+            "remote_type": "Hybrid" if "Hybrid" in job.get("job_type", "") else "Onsite",
+            "position_type": job.get("job_type"),
+            "salary_range": job.get("salary"),
+            "job_category": "Corporate Housing"
+        },
+        "job_description": {
+            "description": job.get("description"),
+            "responsibilities": [
+                line.strip()
+                for line in job.get("full_description", [])
+                if line and len(line) < 200
+            ]
+        },
+        "qualifications": [
+            q.strip("• ").strip()
+            for block in job.get("qualifications", [])
+            for q in block.split("\n")
+            if q.strip()
+        ]
+    }
+
+
+
+
+# @router.get("/crsth-scrape")
+# async def scrape_jobs():
+#     jobs = await job_scraper()
+#     jobs =await enrich_jobs_with_details(jobs)
+
+#     filtered_jobs = await ai_job_filter(jobs) if jobs else []
+#     # if filtered_jobs:
+#     #     descriptions = await asyncio.gather(
+#     #         *(description_scraper(job["url"]) for job in filtered_jobs)
+#     #     )
+#     #     for job, full_description in zip(filtered_jobs, descriptions):
+#     #         structured_description = " ".join(
+#     #             p.strip() for p in full_description.split("\n") if p.strip()
+#     #         )
+#     #         job["detail"] = structured_description
+#     #     for job in filtered_jobs:
+#     #         urls = await find_crths_job(job)
+#     #         job["other_sites"] = urls
+#     jobs_json = json.dumps(filtered_jobs, ensure_ascii=False, indent=4)
+#     formatted_jobs = []
+
+#     for job in jobs_json:
+#         formatted_jobs.append({
+#             "url": job.get("url"),
+#             "detail": json.dumps(
+#                 transform_job_for_frontend(job),
+#                 ensure_ascii=False
+#             )
+#         })
+
+#     # jobs_json = json.dumps(jobs, ensure_ascii=False, indent=4)
+#     existing_job = await Job.filter(title="crsth").first()
+#     if existing_job:
+#         existing_job.jobs = jobs_json
+#         await existing_job.save()
+#     # else:
+#     #     await Job.create(title="crsth", jobs=jobs_json)
+#     # return {"message": "CRSTH jobs scraping done", "jobs": filtered_jobs}
+#     email_service = JobNotificationEmailService()
+
+
+#     notify_email = os.getenv("JOB_NOTIFICATION_EMAIL")  # e.g. admin@company.com
+
+#     existing_job = await Job.filter(title="crsth").first()
+
+#     old_jobs = []
+#     if existing_job and existing_job.jobs:
+#         old_jobs = json.loads(existing_job.jobs)
+
+#     new_jobs = find_new_jobs(old_jobs, jobs, key="url")
+
+#     # Send email ONLY if new jobs found
+#     if new_jobs:
+#         email_service.send_new_jobs_email(to_email=notify_email, jobs=new_jobs)
+
+#     # jobs_json = json.dumps(filtered_jobs, ensure_ascii=False, indent=4)
+#     jobs_json = json.dumps(jobs, ensure_ascii=False, indent=4)
+#     if existing_job:
+#         existing_job.jobs = jobs_json
+#         await existing_job.save()
+#     else:
+#         await Job.create(title="crsth", jobs=jobs_json)
+#     return {
+#     "message": "CRSTH jobs scraping done",
+#     "new_jobs_found": len(new_jobs),
+#     "jobs": jobs
+# }
+
+
+
+
 @router.get("/crsth-scrape")
 async def scrape_jobs():
+    # 1️⃣ Scrape + enrich
     jobs = await job_scraper()
-    jobs =await enrich_jobs_with_details(jobs)
+    jobs = await enrich_jobs_with_details(jobs)
 
-    # filtered_jobs = await ai_job_filter(jobs) if jobs else []
-    # if filtered_jobs:
-    #     descriptions = await asyncio.gather(
-    #         *(description_scraper(job["url"]) for job in filtered_jobs)
-    #     )
-    #     for job, full_description in zip(filtered_jobs, descriptions):
-    #         structured_description = " ".join(
-    #             p.strip() for p in full_description.split("\n") if p.strip()
-    #         )
-    #         job["detail"] = structured_description
-        # for job in filtered_jobs:
-        #     urls = await find_crths_job(job)
-        #     job["other_sites"] = urls
-    # jobs_json = json.dumps(filtered_jobs, ensure_ascii=False, indent=4)
-    jobs_json = json.dumps(jobs, ensure_ascii=False, indent=4)
+    # 2️⃣ AI filter
+    filtered_jobs = await ai_job_filter(jobs) if jobs else []
+
+    # 3️⃣ Format jobs for frontend
+    formatted_jobs = []
+    for job in filtered_jobs:
+        formatted_jobs.append({
+        "url": job.get("url"),
+        "title": job.get("title"),  # 👈 REQUIRED for list view
+        "description": job.get("description"),  # 👈 REQUIRED for list view
+        "detail": json.dumps(transform_job_for_frontend(job),ensure_ascii=False)})
+
+
+    # 4️⃣ Load existing jobs (for email diff)
     existing_job = await Job.filter(title="crsth").first()
-    if existing_job:
-        existing_job.jobs = jobs_json
-        await existing_job.save()
-    # else:
-    #     await Job.create(title="crsth", jobs=jobs_json)
-    # return {"message": "CRSTH jobs scraping done", "jobs": filtered_jobs}
-    email_service = JobNotificationEmailService()
+    old_jobs = json.loads(existing_job.jobs) if existing_job and existing_job.jobs else []
 
+    # 5️⃣ Find newly added jobs
+    new_jobs = find_new_jobs(old_jobs, formatted_jobs, key="url")
 
-    notify_email = os.getenv("JOB_NOTIFICATION_EMAIL")  # e.g. admin@company.com
-
-    existing_job = await Job.filter(title="crsth").first()
-
-    old_jobs = []
-    if existing_job and existing_job.jobs:
-        old_jobs = json.loads(existing_job.jobs)
-
-    new_jobs = find_new_jobs(old_jobs, jobs, key="url")
-
-    # Send email ONLY if new jobs found
+    # 6️⃣ Send email if new jobs found
     if new_jobs:
-        email_service.send_new_jobs_email(to_email=notify_email, jobs=new_jobs)
+        email_service = JobNotificationEmailService()
+        notify_email = os.getenv("JOB_NOTIFICATION_EMAIL")
+        email_service.send_new_jobs_email(
+            to_email=notify_email,
+            jobs=new_jobs
+        )
 
-    # jobs_json = json.dumps(filtered_jobs, ensure_ascii=False, indent=4)
-    jobs_json = json.dumps(jobs, ensure_ascii=False, indent=4)
+    # 7️⃣ Save FRONTEND-COMPATIBLE jobs to DB
+    jobs_json = json.dumps(formatted_jobs, ensure_ascii=False, indent=4)
+
     if existing_job:
         existing_job.jobs = jobs_json
         await existing_job.save()
     else:
         await Job.create(title="crsth", jobs=jobs_json)
+
+    # 8️⃣ API response
     return {
-    "message": "CRSTH jobs scraping done",
-    "new_jobs_found": len(new_jobs),
-    "jobs": jobs
-}
+        "message": "CRSTH jobs scraping done",
+        "new_jobs_found": len(new_jobs),
+        "jobs": formatted_jobs
+    }
 
 
 
