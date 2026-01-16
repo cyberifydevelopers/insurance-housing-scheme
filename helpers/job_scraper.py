@@ -109,48 +109,49 @@ async def job_scraper():
     
     try:
         url = "https://crsth.com/careers/"
-        print(f"Loading {url}...")
+        # print(f"Loading {url}...")
         driver.get(url)
         
-        print("Waiting for iframe...")
+        # print("Waiting for iframe...")
         wait = WebDriverWait(driver, 30)
         iframe = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "iframe")))
-        print("✓ Found iframe")
+        # print("✓ Found iframe")
         
-        print("Scrolling iframe into view...")
+        # print("Scrolling iframe into view...")
         driver.execute_script("arguments[0].scrollIntoView(true);", iframe)
         time.sleep(2)
         
         driver.switch_to.frame(iframe)
-        print("✓ Switched to iframe")
+        # print("✓ Switched to iframe")
         
-        print("Waiting for loading spinner to disappear...")
+        # print("Waiting for loading spinner to disappear...")
         try:
             WebDriverWait(driver, 5).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, ".portal-sprawl-loader-container"))
             )
-            print("  Loading spinner detected...")
+            # print("  Loading spinner detected...")
             
             WebDriverWait(driver, 60).until(
                 EC.invisibility_of_element_located((By.CSS_SELECTOR, ".portal-sprawl-loader-container"))
             )
-            print("✓ Loading spinner disappeared!")
+            # print("✓ Loading spinner disappeared!")
         except:
-            print("  No loading spinner found")
+            # print("  No loading spinner found")
+            pass 
         
-        print("Waiting for content to render...")
+        # print("Waiting for content to render...")
         # time.sleep(5)
         await asyncio.sleep(5)
         
         # Wait for job listings to appear
-        print("Waiting for job listings to load...")
+        # print("Waiting for job listings to load...")
         WebDriverWait(driver, 30).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "a[href*='/jobs/']"))
         )
-        print("✓ Job listings loaded!")
+        # print("✓ Job listings loaded!")
         
         # Check if there's a dropdown/filter
-        print("\nChecking for filters/dropdown...")
+        # print("\nChecking for filters/dropdown...")
         all_selects = driver.find_elements(By.TAG_NAME, "select")
         
         jobs = []
@@ -159,15 +160,15 @@ async def job_scraper():
         if all_selects:
             # If dropdown exists, iterate through options
             select_el = all_selects[0]
-            print(f"✓ Found dropdown with {len(Select(select_el).options)} options")
+            # print(f"✓ Found dropdown with {len(Select(select_el).options)} options")
             
             select = Select(select_el)
             option_values = [opt.get_attribute("value") for opt in select.options]
             
             for idx, value in enumerate(option_values):
-                print(f"\n{'='*60}")
-                print(f"Processing filter {idx+1}/{len(option_values)}: '{value}'")
-                print(f"{'='*60}")
+                # print(f"\n{'='*60}")
+                # print(f"Processing filter {idx+1}/{len(option_values)}: '{value}'")
+                # print(f"{'='*60}")
 
                 
                 
@@ -182,28 +183,28 @@ async def job_scraper():
                 # Scrape jobs for this filter
                 jobs_found =await scrape_current_jobs(driver, seen_urls)
                 jobs.extend(jobs_found)
-                print(f"  Found {len(jobs_found)} new jobs in this filter")
+                # print(f"  Found {len(jobs_found)} new jobs in this filter")
         else:
             # No dropdown, just scrape all visible jobs
-            print("No dropdown found, scraping all visible jobs...")
+            # print("No dropdown found, scraping all visible jobs...")
             jobs =await scrape_current_jobs(driver, seen_urls)
         
-        print(f"\n{'='*60}")
-        print(f"🎉 SCRAPING COMPLETE!")
-        print(f"{'='*60}")
-        print(f"Total unique jobs found: {len(jobs)}")
+        # print(f"\n{'='*60}")
+        # print(f"🎉 SCRAPING COMPLETE!")
+        # print(f"{'='*60}")
+        # print(f"Total unique jobs found: {len(jobs)}")
         return jobs
         
     except Exception as e:
-        print(f"\n{'='*60}")
-        print(f"❌ ERROR OCCURRED")
-        print(f"{'='*60}")
-        print(f"Error: {e}")
+        # print(f"\n{'='*60}")
+        # print(f"❌ ERROR OCCURRED")
+        # print(f"{'='*60}")
+        # print(f"Error: {e}")
         import traceback
         traceback.print_exc()
         
-        driver.save_screenshot("error_screenshot.png")
-        print("\n📸 Screenshot saved")
+        # driver.save_screenshot("error_screenshot.png")
+        # print("\n📸 Screenshot saved")
         return []
         
     finally:
@@ -218,7 +219,7 @@ async def scrape_current_jobs(driver, seen_urls):
     # Find all job links
     job_links = driver.find_elements(By.CSS_SELECTOR, "a[href*='/jobs/']")
     
-    print(f"  Processing {len(job_links)} job listings...")
+    # print(f"  Processing {len(job_links)} job listings...")
     
     for job_link in job_links:
         try:
@@ -277,7 +278,7 @@ async def scrape_current_jobs(driver, seen_urls):
                         
             except Exception as e:
                 description = "No description"
-                print(f"      ⚠️  Description extraction error: {e}")
+                # print(f"      ⚠️  Description extraction error: {e}")
             
             job = {
                 "title": title,
@@ -290,13 +291,13 @@ async def scrape_current_jobs(driver, seen_urls):
             jobs.append(job)
             seen_urls.add(job_url)
             
-            print(f"    ✓ {title}")
-            print(f"      📍 {location}")
-            print(f"      🏷️  {job_type}")
-            print(f"      📝 {description[:80]}..." if len(description) > 80 else f"      📝 {description}")
+            # print(f"    ✓ {title}")
+            # print(f"      📍 {location}")
+            # print(f"      🏷️  {job_type}")
+            # print(f"      📝 {description[:80]}..." if len(description) > 80 else f"      📝 {description}")
             
         except Exception as e:
-            print(f"    ✗ Error parsing job: {e}")
+            # print(f"    ✗ Error parsing job: {e}")
             continue
     
     return jobs
@@ -308,7 +309,7 @@ async def _scrape_detail_page(driver, url):
     driver.switch_to.window(driver.window_handles[-1])
 
     try:
-        print(f"      🔗 Loading: {url}")
+        # print(f"      🔗 Loading: {url}")
         driver.get(url)
 
         wait = WebDriverWait(driver, 30)
@@ -344,7 +345,7 @@ async def _scrape_detail_page(driver, url):
         }
 
     except Exception as e:
-        print(f"      ❌ Detail scrape error: {e}")
+        # print(f"      ❌ Detail scrape error: {e}")
         return {
             "salary": "Not provided",
             "full_description": [],
@@ -367,7 +368,7 @@ async def _extract_salary(driver):
         )
         return salary_el.text.strip()
     except Exception as e:
-        print(f"      ⚠️ Salary extraction failed: {e}")
+        # print(f"      ⚠️ Salary extraction failed: {e}")
         return "Not provided"
 
 
@@ -383,7 +384,7 @@ async def _extract_section(driver, section_title):
             ))
         )
     except TimeoutException:
-        print(f"      ⚠️ {section_title} section not found")
+        # print(f"      ⚠️ {section_title} section not found")
         return []
 
     texts = []
@@ -392,7 +393,7 @@ async def _extract_section(driver, section_title):
         if txt:
             texts.append(txt)
 
-    print(f"      📄 {section_title}: {len(texts)} items")
+    # print(f"      📄 {section_title}: {len(texts)} items")
     return texts
 
 
@@ -414,16 +415,16 @@ async def enrich_jobs_with_details(jobs):
     )
 
     try:
-        print("\n============================================================")
-        print("🔍  STARTING DETAIL SCRAPE")
-        print("============================================================")
+        # print("\n============================================================")
+        # print("🔍  STARTING DETAIL SCRAPE")
+        # print("============================================================")
 
         for idx, job in enumerate(jobs, 1):
-            print(f"{idx:2d}/{len(jobs)}  {job['title'][:50]}…")
+            # print(f"{idx:2d}/{len(jobs)}  {job['title'][:50]}…")
             extra =await _scrape_detail_page(driver, job["url"])
             job.update(extra)
         
-        print("\n✅ Detail scrape finished!")
+        # print("\n✅ Detail scrape finished!")
         return jobs
     finally:
         driver.quit()

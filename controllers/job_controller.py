@@ -165,8 +165,17 @@ async def scrape_jobs():
 
 
     # 4️⃣ Load existing jobs (for email diff)
+    # 4️⃣ Load existing jobs (for email diff)
     existing_job = await Job.filter(title="crsth").first()
-    old_jobs = json.loads(existing_job.jobs) if existing_job and existing_job.jobs else []
+
+    # Handle both string and list types
+    if existing_job and existing_job.jobs:
+        if isinstance(existing_job.jobs, str):
+            old_jobs = json.loads(existing_job.jobs)
+        else:
+            old_jobs = existing_job.jobs  # Already a list
+    else:
+        old_jobs = []
 
     # 5️⃣ Find newly added jobs
     new_jobs = find_new_jobs(old_jobs, formatted_jobs, key="url")
