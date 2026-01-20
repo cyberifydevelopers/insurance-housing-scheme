@@ -1,0 +1,311 @@
+2026-01-20 11:07:24,984 DEBUG: Changing event name from creating-client-class.iot-data to creating-client-class.iot-data-plane
+2026-01-20 11:07:24,984 DEBUG: Changing event name from before-call.apigateway to before-call.api-gateway
+2026-01-20 11:07:24,984 DEBUG: Changing event name from request-created.machinelearning.Predict to request-created.machine-learning.Predict
+2026-01-20 11:07:24,984 DEBUG: Changing event name from before-parameter-build.autoscaling.CreateLaunchConfiguration to before-parameter-build.auto-scaling.CreateLaunchConfiguration
+2026-01-20 11:07:24,984 DEBUG: Changing event name from before-parameter-build.route53 to before-parameter-build.route-53
+2026-01-20 11:07:24,984 DEBUG: Changing event name from request-created.cloudsearchdomain.Search to request-created.cloudsearch-domain.Search
+2026-01-20 11:07:24,984 DEBUG: Changing event name from docs.*.autoscaling.CreateLaunchConfiguration.complete-section to docs.*.auto-scaling.CreateLaunchConfiguration.complete-section
+2026-01-20 11:07:25,000 DEBUG: Changing event name from before-parameter-build.logs.CreateExportTask to before-parameter-build.cloudwatch-logs.CreateExportTask
+2026-01-20 11:07:25,000 DEBUG: Changing event name from docs.*.logs.CreateExportTask.complete-section to docs.*.cloudwatch-logs.CreateExportTask.complete-section
+2026-01-20 11:07:25,000 DEBUG: Changing event name from before-parameter-build.cloudsearchdomain.Search to before-parameter-build.cloudsearch-domain.Search
+2026-01-20 11:07:25,000 DEBUG: Changing event name from docs.*.cloudsearchdomain.Search.complete-section to docs.*.cloudsearch-domain.Search.complete-section
+2026-01-20 11:07:25,001 DEBUG: Loading JSON file: G:\Insurance Housing Company\server\venv\Lib\site-packages\botocore\data\endpoints.json
+2026-01-20 11:07:25,018 DEBUG: Loading JSON file: G:\Insurance Housing Company\server\venv\Lib\site-packages\botocore\data\sdk-default-configuration.json
+2026-01-20 11:07:25,018 DEBUG: Event choose-service-name: calling handler <function handle_service_name_alias at 0x0000026369B79D00>
+2026-01-20 11:07:25,071 DEBUG: Loading JSON file: G:\Insurance Housing Company\server\venv\Lib\site-packages\botocore\data\s3\2006-03-01\service-2.json.gz
+2026-01-20 11:07:25,090 DEBUG: Loading JSON file: G:\Insurance Housing Company\server\venv\Lib\site-packages\botocore\data\s3\2006-03-01\service-2.sdk-extras.json
+2026-01-20 11:07:25,139 DEBUG: Loading JSON file: G:\Insurance Housing Company\server\venv\Lib\site-packages\botocore\data\s3\2006-03-01\endpoint-rule-set-1.json.gz
+2026-01-20 11:07:25,142 DEBUG: Loading JSON file: G:\Insurance Housing Company\server\venv\Lib\site-packages\botocore\data\partitions.json
+2026-01-20 11:07:25,144 DEBUG: Event creating-client-class.s3: calling handler <function add_generate_presigned_post at 0x0000026369B2CCC0>
+2026-01-20 11:07:25,144 DEBUG: Event creating-client-class.s3: calling handler <function lazy_call.<locals>._handler at 0x0000026306833920>
+2026-01-20 11:07:25,166 DEBUG: Event creating-client-class.s3: calling handler <function add_generate_presigned_url at 0x0000026369B2CA40>
+2026-01-20 11:07:25,166 DEBUG: Looking for endpoint for s3 via: environment_service
+2026-01-20 11:07:25,166 DEBUG: Looking for endpoint for s3 via: environment_global
+2026-01-20 11:07:25,166 DEBUG: Looking for endpoint for s3 via: config_service
+2026-01-20 11:07:25,166 DEBUG: Looking for endpoint for s3 via: config_global
+2026-01-20 11:07:25,166 DEBUG: No configured endpoint found.
+2026-01-20 11:07:25,166 DEBUG: Setting s3 timeout as (60, 60)
+2026-01-20 11:07:25,166 DEBUG: Loading JSON file: G:\Insurance Housing Company\server\venv\Lib\site-packages\botocore\data\_retry.json
+2026-01-20 11:07:25,166 DEBUG: Registering retry handlers for service: s3
+2026-01-20 11:07:25,166 DEBUG: Registering S3 region redirector handler
+2026-01-20 11:07:25,166 DEBUG: Registering S3Express Identity Resolver
+2026-01-20 11:07:25,229 DEBUG: Looking up time zone info from registry
+2026-01-20 11:07:25,244 DEBUG: Tortoise-ORM startup
+    connections: {'default': {'engine': 'tortoise.backends.asyncpg', 'credentials': {'port': 5434, 'database': 'insurance-housing-company', 'host': 'localhost', 'user': 'postgres', 'password': '1***'}}}
+    apps: {'models': {'models': ['models.user', 'models.jobs', 'models.courses', 'models.steps', 'models.trainingmaterial', 'models.user_registration'], 'default_connection': 'default'}}
+2026-01-20 11:07:25,285 DEBUG: Creating schema: CREATE TABLE IF NOT EXISTS "user" (
+    "id" SERIAL NOT NULL PRIMARY KEY,
+    "name" VARCHAR(255) NOT NULL,
+    "email" VARCHAR(255) NOT NULL,
+    "password" VARCHAR(255) NOT NULL,
+    "type" VARCHAR(10) NOT NULL,
+    "course_tracker" JSONB
+);
+COMMENT ON COLUMN "user"."type" IS 'ADMIN: admin\nUSER: user';
+CREATE TABLE IF NOT EXISTS "job" (
+    "id" SERIAL NOT NULL PRIMARY KEY,
+    "title" VARCHAR(100) NOT NULL,
+    "jobs" JSONB NOT NULL
+);
+CREATE TABLE IF NOT EXISTS "course" (
+    "id" SERIAL NOT NULL PRIMARY KEY,
+    "title" VARCHAR(255) NOT NULL,
+    "description" TEXT
+);
+CREATE TABLE IF NOT EXISTS "step" (
+    "id" SERIAL NOT NULL PRIMARY KEY,
+    "title" VARCHAR(255) NOT NULL,
+    "order" INT NOT NULL DEFAULT 0,
+    "course_id" INT NOT NULL REFERENCES "course" ("id") ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS "trainingmaterial" (
+    "id" SERIAL NOT NULL PRIMARY KEY,
+    "title" VARCHAR(255),
+    "type" VARCHAR(20) NOT NULL,
+    "file_url" VARCHAR(255),
+    "key" VARCHAR(255),
+    "course_id" INT NOT NULL REFERENCES "course" ("id") ON DELETE CASCADE,
+    "step_id" INT NOT NULL REFERENCES "step" ("id") ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS "user_registrations" (
+    "id" SERIAL NOT NULL PRIMARY KEY,
+    "resume_path" VARCHAR(512) NOT NULL,
+    "utm_source" VARCHAR(255),
+    "utm_medium" VARCHAR(255),
+    "utm_campaign" VARCHAR(255),
+    "utm_term" VARCHAR(255),
+    "utm_content" VARCHAR(255),
+    "metadata" JSONB,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "user_id" INT NOT NULL REFERENCES "user" ("id") ON DELETE CASCADE
+);
+2026-01-20 11:07:25,361 DEBUG: Created connection pool <asyncpg.pool.Pool object at 0x000002636B8CD480> with params: {'host': 'localhost', 'port': 5434, 'user': 'postgres', 'database': 'insurance-housing-company', 'min_size': 1, 'max_size': 5, 'connection_class': <class 'asyncpg.connection.Connection'>, 'loop': None, 'server_settings': {}}
+2026-01-20 11:07:25,361 DEBUG: CREATE TABLE IF NOT EXISTS "user" (
+    "id" SERIAL NOT NULL PRIMARY KEY,
+    "name" VARCHAR(255) NOT NULL,
+    "email" VARCHAR(255) NOT NULL,
+    "password" VARCHAR(255) NOT NULL,
+    "type" VARCHAR(10) NOT NULL,
+    "course_tracker" JSONB
+);
+COMMENT ON COLUMN "user"."type" IS 'ADMIN: admin\nUSER: user';
+CREATE TABLE IF NOT EXISTS "job" (
+    "id" SERIAL NOT NULL PRIMARY KEY,
+    "title" VARCHAR(100) NOT NULL,
+    "jobs" JSONB NOT NULL
+);
+CREATE TABLE IF NOT EXISTS "course" (
+    "id" SERIAL NOT NULL PRIMARY KEY,
+    "title" VARCHAR(255) NOT NULL,
+    "description" TEXT
+);
+CREATE TABLE IF NOT EXISTS "step" (
+    "id" SERIAL NOT NULL PRIMARY KEY,
+    "title" VARCHAR(255) NOT NULL,
+    "order" INT NOT NULL DEFAULT 0,
+    "course_id" INT NOT NULL REFERENCES "course" ("id") ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS "trainingmaterial" (
+    "id" SERIAL NOT NULL PRIMARY KEY,
+    "title" VARCHAR(255),
+    "type" VARCHAR(20) NOT NULL,
+    "file_url" VARCHAR(255),
+    "key" VARCHAR(255),
+    "course_id" INT NOT NULL REFERENCES "course" ("id") ON DELETE CASCADE,
+    "step_id" INT NOT NULL REFERENCES "step" ("id") ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS "user_registrations" (
+    "id" SERIAL NOT NULL PRIMARY KEY,
+    "resume_path" VARCHAR(512) NOT NULL,
+    "utm_source" VARCHAR(255),
+    "utm_medium" VARCHAR(255),
+    "utm_campaign" VARCHAR(255),
+    "utm_term" VARCHAR(255),
+    "utm_content" VARCHAR(255),
+    "metadata" JSONB,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "user_id" INT NOT NULL REFERENCES "user" ("id") ON DELETE CASCADE
+);
+2026-01-20 11:07:25,361 INFO: Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-20 11:07:25,361 INFO: Added job "scrape_jobs" to job store "default"
+2026-01-20 11:07:25,361 INFO: Scheduler started
+2026-01-20 11:07:25,361 DEBUG: Looking for jobs to run
+2026-01-20 11:07:25,361 DEBUG: Next wakeup is due at 2026-01-21 00:00:00+05:00 (in 46354.638834 seconds)
+2026-01-20 11:13:37,553 INFO: Scheduler has been shut down
+2026-01-20 11:13:37,554 DEBUG: Closed connection pool None with params: {'host': 'localhost', 'port': 5434, 'user': 'postgres', 'database': 'insurance-housing-company', 'min_size': 1, 'max_size': 5, 'connection_class': <class 'asyncpg.connection.Connection'>, 'loop': None, 'server_settings': {}}
+2026-01-20 11:13:37,555 INFO: Tortoise-ORM shutdown
+2026-01-20 11:21:32,637 | apscheduler.scheduler | INFO | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-20 11:21:32,637 | apscheduler.scheduler | INFO | Added job "scrape_jobs" to job store "default"
+2026-01-20 11:21:32,637 | apscheduler.scheduler | INFO | Scheduler started
+2026-01-20 11:21:41,039 | apscheduler.scheduler | INFO | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-20 11:21:41,040 | apscheduler.scheduler | INFO | Added job "scrape_jobs" to job store "default"
+2026-01-20 11:21:41,040 | apscheduler.scheduler | INFO | Scheduler started
+2026-01-20 11:21:49,634 | apscheduler.scheduler | INFO | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-20 11:21:49,634 | apscheduler.scheduler | INFO | Added job "scrape_jobs" to job store "default"
+2026-01-20 11:21:49,634 | apscheduler.scheduler | INFO | Scheduler started
+2026-01-20 11:23:44,520 | apscheduler.scheduler | INFO | Scheduler has been shut down
+2026-01-20 11:23:44,523 | tortoise | INFO | Tortoise-ORM shutdown
+2026-01-20 11:23:54,550 | apscheduler.scheduler | INFO | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-20 11:23:54,550 | apscheduler.scheduler | INFO | Added job "scrape_jobs" to job store "default"
+2026-01-20 11:23:54,550 | apscheduler.scheduler | INFO | Scheduler started
+2026-01-20 11:24:03,333 | apscheduler.scheduler | INFO | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-20 11:24:03,333 | apscheduler.scheduler | INFO | Added job "scrape_jobs" to job store "default"
+2026-01-20 11:24:03,333 | apscheduler.scheduler | INFO | Scheduler started
+2026-01-20 11:24:11,709 | apscheduler.scheduler | INFO | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-20 11:24:11,709 | apscheduler.scheduler | INFO | Added job "scrape_jobs" to job store "default"
+2026-01-20 11:24:11,709 | apscheduler.scheduler | INFO | Scheduler started
+2026-01-20 11:24:19,784 | apscheduler.scheduler | INFO | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-20 11:24:19,785 | apscheduler.scheduler | INFO | Added job "scrape_jobs" to job store "default"
+2026-01-20 11:24:19,785 | apscheduler.scheduler | INFO | Scheduler started
+2026-01-20 11:24:28,402 | apscheduler.scheduler | INFO | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-20 11:24:28,413 | apscheduler.scheduler | INFO | Added job "scrape_jobs" to job store "default"
+2026-01-20 11:24:28,413 | apscheduler.scheduler | INFO | Scheduler started
+2026-01-20 11:24:37,263 | apscheduler.scheduler | INFO | Scheduler has been shut down
+2026-01-20 11:24:37,263 | tortoise | INFO | Tortoise-ORM shutdown
+2026-01-20 11:24:46,178 | apscheduler.scheduler | INFO | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-20 11:24:46,178 | apscheduler.scheduler | INFO | Added job "scrape_jobs" to job store "default"
+2026-01-20 11:24:46,178 | apscheduler.scheduler | INFO | Scheduler started
+2026-01-20 11:24:52,577 | apscheduler.scheduler | INFO | Scheduler has been shut down
+2026-01-20 11:24:52,577 | tortoise | INFO | Tortoise-ORM shutdown
+2026-01-20 11:25:01,578 | apscheduler.scheduler | INFO | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-20 11:25:01,579 | apscheduler.scheduler | INFO | Added job "scrape_jobs" to job store "default"
+2026-01-20 11:25:01,579 | apscheduler.scheduler | INFO | Scheduler started
+2026-01-20 11:25:23,122 | apscheduler.scheduler | INFO | Scheduler has been shut down
+2026-01-20 11:25:23,122 | tortoise | INFO | Tortoise-ORM shutdown
+2026-01-20 11:25:32,455 | apscheduler.scheduler | INFO | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-20 11:25:32,455 | apscheduler.scheduler | INFO | Added job "scrape_jobs" to job store "default"
+2026-01-20 11:25:32,455 | apscheduler.scheduler | INFO | Scheduler started
+2026-01-20 11:25:41,558 | apscheduler.scheduler | INFO | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-20 11:25:41,560 | apscheduler.scheduler | INFO | Added job "scrape_jobs" to job store "default"
+2026-01-20 11:25:41,560 | apscheduler.scheduler | INFO | Scheduler started
+2026-01-20 11:25:51,168 | apscheduler.scheduler | INFO | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-20 11:25:51,168 | apscheduler.scheduler | INFO | Added job "scrape_jobs" to job store "default"
+2026-01-20 11:25:51,168 | apscheduler.scheduler | INFO | Scheduler started
+2026-01-20 11:25:59,646 | apscheduler.scheduler | INFO | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-20 11:25:59,648 | apscheduler.scheduler | INFO | Added job "scrape_jobs" to job store "default"
+2026-01-20 11:25:59,648 | apscheduler.scheduler | INFO | Scheduler started
+2026-01-20 11:26:10,466 | apscheduler.scheduler | INFO | Scheduler has been shut down
+2026-01-20 11:26:10,466 | tortoise | INFO | Tortoise-ORM shutdown
+2026-01-20 11:26:19,227 | apscheduler.scheduler | INFO | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-20 11:26:19,228 | apscheduler.scheduler | INFO | Added job "scrape_jobs" to job store "default"
+2026-01-20 11:26:19,229 | apscheduler.scheduler | INFO | Scheduler started
+2026-01-20 11:26:27,747 | apscheduler.scheduler | INFO | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-20 11:26:27,747 | apscheduler.scheduler | INFO | Added job "scrape_jobs" to job store "default"
+2026-01-20 11:26:27,747 | apscheduler.scheduler | INFO | Scheduler started
+2026-01-20 11:27:31,310 | apscheduler.scheduler | INFO | Scheduler has been shut down
+2026-01-20 11:27:31,310 | tortoise | INFO | Tortoise-ORM shutdown
+2026-01-20 11:27:39,912 | apscheduler.scheduler | INFO | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-20 11:27:39,912 | apscheduler.scheduler | INFO | Added job "scrape_jobs" to job store "default"
+2026-01-20 11:27:39,912 | apscheduler.scheduler | INFO | Scheduler started
+2026-01-20 11:28:51,015 | apscheduler.scheduler | INFO | Scheduler has been shut down
+2026-01-20 11:28:51,015 | tortoise | INFO | Tortoise-ORM shutdown
+2026-01-20 11:28:59,993 | apscheduler.scheduler | INFO | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-20 11:29:00,010 | apscheduler.scheduler | INFO | Added job "scrape_jobs" to job store "default"
+2026-01-20 11:29:00,010 | apscheduler.scheduler | INFO | Scheduler started
+2026-01-20 11:29:08,509 | apscheduler.scheduler | INFO | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-20 11:29:08,510 | apscheduler.scheduler | INFO | Added job "scrape_jobs" to job store "default"
+2026-01-20 11:29:08,510 | apscheduler.scheduler | INFO | Scheduler started
+2026-01-20 11:29:28,690 | apscheduler.scheduler | INFO | Scheduler has been shut down
+2026-01-20 11:29:28,695 | tortoise | INFO | Tortoise-ORM shutdown
+2026-01-20 11:29:38,821 | apscheduler.scheduler | INFO | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-20 11:29:38,821 | apscheduler.scheduler | INFO | Added job "scrape_jobs" to job store "default"
+2026-01-20 11:29:38,821 | apscheduler.scheduler | INFO | Scheduler started
+2026-01-20 11:29:47,950 | apscheduler.scheduler | INFO | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-20 11:29:47,951 | apscheduler.scheduler | INFO | Added job "scrape_jobs" to job store "default"
+2026-01-20 11:29:47,951 | apscheduler.scheduler | INFO | Scheduler started
+2026-01-20 11:29:56,679 | apscheduler.scheduler | INFO | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-20 11:29:56,681 | apscheduler.scheduler | INFO | Added job "scrape_jobs" to job store "default"
+2026-01-20 11:29:56,681 | apscheduler.scheduler | INFO | Scheduler started
+2026-01-20 11:30:05,068 | apscheduler.scheduler | INFO | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-20 11:30:05,084 | apscheduler.scheduler | INFO | Added job "scrape_jobs" to job store "default"
+2026-01-20 11:30:05,084 | apscheduler.scheduler | INFO | Scheduler started
+2026-01-20 11:30:49,811 | apscheduler.scheduler | INFO | Scheduler has been shut down
+2026-01-20 11:30:49,811 | tortoise | INFO | Tortoise-ORM shutdown
+2026-01-20 11:30:58,494 | apscheduler.scheduler | INFO | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-20 11:30:58,494 | apscheduler.scheduler | INFO | Added job "scrape_jobs" to job store "default"
+2026-01-20 11:30:58,494 | apscheduler.scheduler | INFO | Scheduler started
+2026-01-20 11:31:06,955 | apscheduler.scheduler | INFO | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-20 11:31:06,956 | apscheduler.scheduler | INFO | Added job "scrape_jobs" to job store "default"
+2026-01-20 11:31:06,956 | apscheduler.scheduler | INFO | Scheduler started
+2026-01-20 11:31:49,955 | apscheduler.scheduler | INFO | Scheduler has been shut down
+2026-01-20 11:31:49,955 | tortoise | INFO | Tortoise-ORM shutdown
+2026-01-20 11:31:58,660 | apscheduler.scheduler | INFO | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-20 11:31:58,661 | apscheduler.scheduler | INFO | Added job "scrape_jobs" to job store "default"
+2026-01-20 11:31:58,661 | apscheduler.scheduler | INFO | Scheduler started
+2026-01-20 11:36:21,635 | controllers.job_controller | INFO | Starting CRSTH job scraping process.
+2026-01-20 11:36:21,635 | WDM | INFO | ====== WebDriver manager ======
+2026-01-20 11:36:22,683 | WDM | INFO | Get LATEST chromedriver version for google-chrome
+2026-01-20 11:36:23,525 | WDM | INFO | Get LATEST chromedriver version for google-chrome
+2026-01-20 11:36:24,266 | WDM | INFO | There is no [win64] chromedriver "144.0.7559.31" for browser google-chrome "144.0.7559" in cache
+2026-01-20 11:36:24,266 | WDM | INFO | Get LATEST chromedriver version for google-chrome
+2026-01-20 11:36:26,016 | WDM | INFO | WebDriver version 144.0.7559.31 selected
+2026-01-20 11:36:26,016 | WDM | INFO | Modern chrome version https://storage.googleapis.com/chrome-for-testing-public/144.0.7559.31/win32/chromedriver-win32.zip
+2026-01-20 11:36:26,016 | WDM | INFO | About to download new driver from https://storage.googleapis.com/chrome-for-testing-public/144.0.7559.31/win32/chromedriver-win32.zip
+2026-01-20 11:36:26,916 | WDM | INFO | Driver downloading response is 200
+2026-01-20 11:36:27,567 | WDM | INFO | Get LATEST chromedriver version for google-chrome
+2026-01-20 11:36:28,466 | WDM | INFO | Driver has been saved in cache [C:\Users\ZH TRADERS\.wdm\drivers\chromedriver\win64\144.0.7559.31]
+2026-01-20 11:37:33,393 | apscheduler.scheduler | INFO | Scheduler has been shut down
+2026-01-20 11:37:33,394 | tortoise | INFO | Tortoise-ORM shutdown
+2026-01-20 11:37:41,531 | apscheduler.scheduler | INFO | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-20 11:37:41,532 | apscheduler.scheduler | INFO | Added job "scrape_jobs" to job store "default"
+2026-01-20 11:37:41,532 | apscheduler.scheduler | INFO | Scheduler started
+2026-01-20 11:37:46,206 | controllers.job_controller | INFO | Starting CRSTH job scraping process.
+2026-01-20 11:37:46,208 | WDM | INFO | ====== WebDriver manager ======
+2026-01-20 11:37:47,089 | WDM | INFO | Get LATEST chromedriver version for google-chrome
+2026-01-20 11:37:47,840 | WDM | INFO | Get LATEST chromedriver version for google-chrome
+2026-01-20 11:37:48,573 | WDM | INFO | Driver [C:\Users\ZH TRADERS\.wdm\drivers\chromedriver\win64\144.0.7559.31\chromedriver-win32/chromedriver.exe] found in cache
+2026-01-20 11:38:30,577 | helpers.job_scraper | INFO | Loading spinner disappeared.
+2026-01-20 11:38:36,438 | helpers.job_scraper | INFO | Total unique jobs found: 6
+2026-01-20 11:38:38,570 | WDM | INFO | ====== WebDriver manager ======
+2026-01-20 11:38:39,533 | WDM | INFO | Get LATEST chromedriver version for google-chrome
+2026-01-20 11:38:40,290 | WDM | INFO | Get LATEST chromedriver version for google-chrome
+2026-01-20 11:38:41,032 | WDM | INFO | Driver [C:\Users\ZH TRADERS\.wdm\drivers\chromedriver\win64\144.0.7559.31\chromedriver-win32/chromedriver.exe] found in cache
+2026-01-20 11:39:04,429 | helpers.job_scraper | INFO |       \U0001f4ca Salary found: $22.00
+2026-01-20 11:39:04,628 | helpers.job_scraper | INFO | \U0001f4c4 Description: 15 items
+2026-01-20 11:39:04,662 | helpers.job_scraper | INFO | \U0001f4c4 Qualifications: 2 items
+2026-01-20 11:39:18,093 | helpers.job_scraper | INFO | \U0001f4c4 Description: 33 items
+2026-01-20 11:39:18,393 | helpers.job_scraper | INFO | \U0001f4c4 Qualifications: 26 items
+2026-01-20 11:39:23,432 | helpers.job_scraper | INFO |       \U0001f4ca Salary found: $100,000.00 Base+Commission/year
+2026-01-20 11:39:23,848 | helpers.job_scraper | INFO | \U0001f4c4 Description: 35 items
+2026-01-20 11:39:24,171 | helpers.job_scraper | INFO | \U0001f4c4 Qualifications: 30 items
+2026-01-20 11:39:29,459 | helpers.job_scraper | INFO |       \U0001f4ca Salary found: $19.00 - $19.00
+2026-01-20 11:39:29,775 | helpers.job_scraper | INFO | \U0001f4c4 Description: 28 items
+2026-01-20 11:39:30,008 | helpers.job_scraper | INFO | \U0001f4c4 Qualifications: 16 items
+2026-01-20 11:39:34,145 | helpers.job_scraper | INFO |       \U0001f4ca Salary found: $60,000.00 - $60,000.00 Commission/year
+2026-01-20 11:39:34,375 | helpers.job_scraper | INFO | \U0001f4c4 Description: 20 items
+2026-01-20 11:39:34,574 | helpers.job_scraper | INFO | \U0001f4c4 Qualifications: 15 items
+2026-01-20 11:39:38,707 | helpers.job_scraper | INFO |       \U0001f4ca Salary found: $22.00 - $22.00 Hourly
+2026-01-20 11:39:38,908 | helpers.job_scraper | INFO | \U0001f4c4 Description: 19 items
+2026-01-20 11:39:38,990 | helpers.job_scraper | INFO | \U0001f4c4 Qualifications: 6 items
+2026-01-20 11:39:43,491 | httpx | INFO | HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-20 11:39:43,507 | controllers.job_controller | INFO | CRSTH job scraping process done. Found 4 jobs.
+2026-01-20 11:39:43,507 | controllers.job_controller | INFO | Transforming job for frontend: Corporate Housing Specialist
+2026-01-20 11:39:43,507 | controllers.job_controller | INFO | Transforming job for frontend: After Hours Customer Service Specialist
+2026-01-20 11:39:43,507 | controllers.job_controller | INFO | Transforming job for frontend: Relationship Manager (Inside Sales)
+2026-01-20 11:39:43,507 | controllers.job_controller | INFO | Transforming job for frontend: Move In Specialist
+2026-01-20 11:39:43,507 | controllers.job_controller | INFO | Found 4 new CRSTH jobs.
+2026-01-20 12:03:20,882 | apscheduler.scheduler | INFO | Scheduler has been shut down
+2026-01-20 12:03:20,883 | tortoise | INFO | Tortoise-ORM shutdown
+2026-01-20 12:05:44,434 | apscheduler.scheduler | INFO | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-20 12:05:44,435 | apscheduler.scheduler | INFO | Added job "scrape_jobs" to job store "default"
+2026-01-20 12:05:44,436 | apscheduler.scheduler | INFO | Scheduler started
+2026-01-20 12:07:47,096 | apscheduler.scheduler | INFO | Scheduler has been shut down
+2026-01-20 12:07:47,101 | tortoise | INFO | Tortoise-ORM shutdown
+2026-01-20 12:08:04,182 | apscheduler.scheduler | INFO | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-20 12:08:04,185 | apscheduler.scheduler | INFO | Added job "scrape_jobs" to job store "default"
+2026-01-20 12:08:04,185 | apscheduler.scheduler | INFO | Scheduler started
+2026-01-20 12:08:20,680 | apscheduler.scheduler | INFO | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-20 12:08:20,681 | apscheduler.scheduler | INFO | Added job "scrape_jobs" to job store "default"
+2026-01-20 12:08:20,682 | apscheduler.scheduler | INFO | Scheduler started
+2026-01-20 12:08:34,048 | apscheduler.scheduler | INFO | Scheduler has been shut down
+2026-01-20 12:08:34,057 | tortoise | INFO | Tortoise-ORM shutdown
+2026-01-20 12:09:03,964 | apscheduler.scheduler | INFO | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-20 12:09:03,967 | apscheduler.scheduler | INFO | Added job "scrape_jobs" to job store "default"
+2026-01-20 12:09:03,967 | apscheduler.scheduler | INFO | Scheduler started
+2026-01-20 12:10:53,864 | apscheduler.scheduler | INFO | Scheduler has been shut down
+2026-01-20 12:10:53,869 | tortoise | INFO | Tortoise-ORM shutdown
+2026-01-20 12:11:17,123 | apscheduler.scheduler | INFO | Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-01-20 12:11:17,127 | apscheduler.scheduler | INFO | Added job "scrape_jobs" to job store "default"
+2026-01-20 12:11:17,127 | apscheduler.scheduler | INFO | Scheduler started
+2026-01-20 12:20:46,388 | apscheduler.scheduler | INFO | Scheduler has been shut down
+2026-01-20 12:20:46,389 | tortoise | INFO | Tortoise-ORM shutdown

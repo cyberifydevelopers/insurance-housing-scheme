@@ -15,7 +15,10 @@ import tempfile
 import asyncio 
 from selenium.common.exceptions import TimeoutException
 import os
-
+import logging 
+from helpers.logger_config import get_logger
+logger = get_logger(__name__)
+logging.disable(logging.CRITICAL)
 
 # old code 
 # async def job_scraper():
@@ -94,11 +97,12 @@ import os
 
 async def job_scraper():
     chrome_options = Options()
-    chrome_options.binary_location = "/usr/bin/google-chrome" # comment this for windows 
+    # chrome_options.binary_location = "/usr/bin/google-chrome" # comment this for windows 
     chrome_options.add_argument("--headless=True")  # Uncomment for production
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument(f"--user-data-dir={tempfile.mkdtemp()}")
+    
 
     driver = webdriver.Chrome(
         service=Service(ChromeDriverManager().install()), 
@@ -135,6 +139,7 @@ async def job_scraper():
                 EC.invisibility_of_element_located((By.CSS_SELECTOR, ".portal-sprawl-loader-container"))
             )
             # print("✓ Loading spinner disappeared!")
+            logger.info("Loading spinner disappeared.")
         except:
             # print("  No loading spinner found")
             pass 
@@ -193,6 +198,7 @@ async def job_scraper():
         # print(f"🎉 SCRAPING COMPLETE!")
         # print(f"{'='*60}")
         # print(f"Total unique jobs found: {len(jobs)}")
+        logger.info(f"Total unique jobs found: {len(jobs)}")
         return jobs
         
     except Exception as e:
@@ -366,6 +372,7 @@ async def _extract_salary(driver):
                 "//span[normalize-space()='Salary Range']/parent::div/following-sibling::div/span"
             ))
         )
+        logger.info(f"      📊 Salary found: {salary_el.text.strip()}")
         return salary_el.text.strip()
     except Exception as e:
         # print(f"      ⚠️ Salary extraction failed: {e}")
@@ -393,7 +400,8 @@ async def _extract_section(driver, section_title):
         if txt:
             texts.append(txt)
 
-    # print(f"      📄 {section_title}: {len(texts)} items")
+    # print(f"📄 {section_title}: {len(texts)} items")
+    logger.info(f"📄 {section_title}: {len(texts)} items")
     return texts
 
 

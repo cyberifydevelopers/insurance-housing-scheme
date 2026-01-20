@@ -24,6 +24,11 @@ from pydantic import BaseModel
 from typing import List
 from helpers.apply_jobs import alacrity_job_apply, crsth_job_apply
 from helpers.job_notification_email import JobNotificationEmailService
+import logging 
+from helpers.logger_config import get_logger
+logger = get_logger(__name__)
+
+logging.disable(logging.CRITICAL)
 
 
 router = APIRouter(prefix="/api/job")
@@ -35,8 +40,9 @@ class LinkRequest(BaseModel):
 
 def find_new_jobs(old_jobs, new_jobs, key="url"):
     old_urls = set()
-
+    
     if old_jobs:
+        logger.info(f"Finding new jobs from {len(old_jobs)} old jobs and {len(new_jobs)} new jobs.")
         for job in old_jobs:
             if isinstance(job, dict) and job.get(key):
                 old_urls.add(job[key])
@@ -46,6 +52,7 @@ def find_new_jobs(old_jobs, new_jobs, key="url"):
 
 
 def transform_job_for_frontend(job: dict) -> dict:
+    logger.info(f"Transforming job for frontend: {job.get('title')}")
     return {
         "job_title": job.get("title"),
         "job_details": {
@@ -148,11 +155,13 @@ def transform_job_for_frontend(job: dict) -> dict:
 @router.get("/crsth-scrape")
 async def scrape_jobs():
     # 1️⃣ Scrape + enrich
+    logger.info("Starting CRSTH job scraping process.")
     jobs = await job_scraper()
     jobs = await enrich_jobs_with_details(jobs)
 
     # 2️⃣ AI filter
     filtered_jobs = await ai_job_filter(jobs) if jobs else []
+    logger.info(f"CRSTH job scraping process done. Found {len(filtered_jobs)} jobs.")
 
     # 3️⃣ Format jobs for frontend
     formatted_jobs = []
@@ -164,7 +173,6 @@ async def scrape_jobs():
         "detail": json.dumps(transform_job_for_frontend(job),ensure_ascii=False)})
 
 
-    # 4️⃣ Load existing jobs (for email diff)
     # 4️⃣ Load existing jobs (for email diff)
     existing_job = await Job.filter(title="crsth").first()
 
@@ -179,7 +187,7 @@ async def scrape_jobs():
 
     # 5️⃣ Find newly added jobs
     new_jobs = find_new_jobs(old_jobs, formatted_jobs, key="url")
-
+    logger.info(f"Found {len(new_jobs)} new CRSTH jobs.")
     # 6️⃣ Send email if new jobs found
     if new_jobs:
         email_service = JobNotificationEmailService()
