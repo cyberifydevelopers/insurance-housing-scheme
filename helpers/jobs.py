@@ -14,7 +14,7 @@ from helpers.logger_config import get_logger
 from helpers.job_scraper import enrich_jobs_with_details
 from controllers.job_controller import transform_job_for_frontend,find_new_jobs
 import os 
-from helpers.email_service import JobNotificationEmailService
+from helpers.job_notification_email import JobNotificationEmailService
 import logging
 logger = get_logger(__name__)
 logging.disable(logging.CRITICAL)
