@@ -5,6 +5,7 @@ warnings.filterwarnings("ignore", category=UserWarning)  # if LangChain uses Use
 import asyncio
 from fastapi import APIRouter
 from helpers.ai_filter_job import ai_job_filter
+from helpers.sedgwick_jobs import scrape_sedgwick_jobs
 from helpers.job_scraper import (
     job_scraper,
     description_scraper,
@@ -156,22 +157,40 @@ def transform_job_for_frontend(job: dict) -> dict:
 async def scrape_jobs():
     # 1️⃣ Scrape + enrich
     logger.info("Starting CRSTH job scraping process.")
-    jobs = await job_scraper()
-    jobs = await enrich_jobs_with_details(jobs)
+    
+    try:
+        jobs = await job_scraper()
+        jobs = await enrich_jobs_with_details(jobs)
+    except Exception as e:
+        logger.error(f"Scraping failed: {str(e)}")
+        return {
+            "message": "CRSTH jobs scraping failed - existing data preserved",
+            "error": str(e),
+            "new_jobs_found": 0
+        }
 
     # 2️⃣ AI filter
     filtered_jobs = await ai_job_filter(jobs) if jobs else []
     logger.info(f"CRSTH job scraping process done. Found {len(filtered_jobs)} jobs.")
 
+    # 🛡️ CRITICAL: Don't update DB if scraping returned no results
+    if not filtered_jobs:
+        logger.warning("No jobs found from scraping. Preserving existing database records.")
+        return {
+            "message": "CRSTH scraping returned 0 jobs - existing data preserved",
+            "new_jobs_found": 0,
+            "jobs": []
+        }
+
     # 3️⃣ Format jobs for frontend
     formatted_jobs = []
     for job in filtered_jobs:
         formatted_jobs.append({
-        "url": job.get("url"),
-        "title": job.get("title"),  # 👈 REQUIRED for list view
-        "description": job.get("description"),  # 👈 REQUIRED for list view
-        "detail": json.dumps(transform_job_for_frontend(job),ensure_ascii=False)})
-
+            "url": job.get("url"),
+            "title": job.get("title"),
+            "description": job.get("description"),
+            "detail": json.dumps(transform_job_for_frontend(job), ensure_ascii=False)
+        })
 
     # 4️⃣ Load existing jobs (for email diff)
     existing_job = await Job.filter(title="crsth").first()
@@ -188,6 +207,7 @@ async def scrape_jobs():
     # 5️⃣ Find newly added jobs
     new_jobs = find_new_jobs(old_jobs, formatted_jobs, key="url")
     logger.info(f"Found {len(new_jobs)} new CRSTH jobs.")
+    
     # 6️⃣ Send email if new jobs found
     if new_jobs:
         email_service = JobNotificationEmailService()
@@ -215,37 +235,124 @@ async def scrape_jobs():
 
 
 
+# @router.get("/alacrity-scrape")
+# async def alacrity_scrap():
+#     jobs = await alacrity_jobs()
+#     ai_filtered_jobs = []
+#     if jobs:
+#         ai_filtered_jobs = await alacrity_job_filter(jobs)
+#         print("Ai filtered jobs", ai_filtered_jobs)
+#         for job in ai_filtered_jobs:
+#             job["detail"] = await alacrity_job_detail(job["link"])
+#             print("job detail", job["detail"])
+
+#     jobs_json = json.dumps(ai_filtered_jobs, ensure_ascii=False, indent=4)
+#     # print("jobs_json", jobs_json)
+#     # is_job_exists = await Job.filter(title="alacrity").first()
+#     # if is_job_exists:
+#     #     is_job_exists.jobs = jobs_json
+#     #     await is_job_exists.save()
+#     # else:
+#     #     await Job.create(title="alacrity", jobs=jobs_json)
+#     # return {
+#     #     "message": "Alacrity jobs scraping done",
+#     #     "jobs": ai_filtered_jobs,
+#     # }
+#     email_service = JobNotificationEmailService()
+#     notify_email = os.getenv("JOB_NOTIFICATION_EMAIL")
+
+#     existing_job = await Job.filter(title="alacrity").first()
+
+#     # old_jobs = []
+#     # if existing_job and existing_job.jobs:
+#     #     old_jobs = json.loads(existing_job.jobs)
+#     old_jobs = []
+#     if existing_job and existing_job.jobs:
+#         if isinstance(existing_job.jobs, str):
+#             old_jobs = json.loads(existing_job.jobs)
+#         elif isinstance(existing_job.jobs, list):
+#             old_jobs = existing_job.jobs
+
+
+#     old_links = {job.get("link") for job in old_jobs if isinstance(job, dict)}
+#     new_jobs = find_new_jobs(old_jobs, ai_filtered_jobs, key="link")
+
+#     # Send email only if new jobs exist
+#     if new_jobs and notify_email:
+#         email_service.send_new_jobs_email(
+#             to_email=notify_email,
+#             jobs=new_jobs
+#         )
+
+#     # Save updated jobs
+#     if existing_job:
+#         existing_job.jobs = jobs_json
+#         await existing_job.save()
+#     else:
+#         await Job.create(title="alacrity", jobs=jobs_json)
+
+#     return {
+#         "message": "Alacrity jobs scraping done",
+#         "new_jobs_found": len(new_jobs),
+#         "jobs": ai_filtered_jobs
+#     }
+
+
 @router.get("/alacrity-scrape")
 async def alacrity_scrap():
-    jobs = await alacrity_jobs()
+    """Scrape Alacrity jobs with filtering and data protection"""
+    
+    # 1️⃣ Try to scrape jobs
+    try:
+        jobs = await alacrity_jobs()
+    except Exception as e:
+        logger.error(f"Alacrity scraping failed: {str(e)}")
+        return {
+            "message": "Alacrity jobs scraping failed - existing data preserved",
+            "error": str(e),
+            "new_jobs_found": 0
+        }
+    
+    # 2️⃣ Guard against empty results
+    if not jobs:
+        logger.warning("No Housing Account Manager jobs found. Preserving existing database records.")
+        return {
+            "message": "Alacrity scraping returned 0 matching jobs - existing data preserved",
+            "new_jobs_found": 0,
+            "jobs": []
+        }
+    
+    # 3️⃣ AI filter
     ai_filtered_jobs = []
-    if jobs:
+    try:
         ai_filtered_jobs = await alacrity_job_filter(jobs)
-        print("Ai filtered jobs", ai_filtered_jobs)
-        for job in ai_filtered_jobs:
+        logger.info(f"AI filtered jobs: {len(ai_filtered_jobs)}")
+    except Exception as e:
+        logger.error(f"AI filtering failed: {str(e)}")
+        # Use unfiltered jobs if AI filter fails
+        ai_filtered_jobs = jobs
+    
+    # 4️⃣ Guard against AI filter removing all jobs
+    if not ai_filtered_jobs:
+        logger.warning("AI filter removed all jobs. Preserving existing database records.")
+        return {
+            "message": "AI filtering returned 0 jobs - existing data preserved",
+            "new_jobs_found": 0,
+            "jobs": []
+        }
+    
+    # 5️⃣ Enrich with job details
+    for job in ai_filtered_jobs:
+        try:
             job["detail"] = await alacrity_job_detail(job["link"])
-            print("job detail", job["detail"])
+            logger.info(f"Enriched job detail for: {job['title']}")
+        except Exception as e:
+            logger.error(f"Failed to get details for {job['title']}: {str(e)}")
+            job["detail"] = None  # Don't fail entire scrape if one detail fails
 
-    jobs_json = json.dumps(ai_filtered_jobs, ensure_ascii=False, indent=4)
-    # print("jobs_json", jobs_json)
-    # is_job_exists = await Job.filter(title="alacrity").first()
-    # if is_job_exists:
-    #     is_job_exists.jobs = jobs_json
-    #     await is_job_exists.save()
-    # else:
-    #     await Job.create(title="alacrity", jobs=jobs_json)
-    # return {
-    #     "message": "Alacrity jobs scraping done",
-    #     "jobs": ai_filtered_jobs,
-    # }
-    email_service = JobNotificationEmailService()
-    notify_email = os.getenv("JOB_NOTIFICATION_EMAIL")
-
+    # 6️⃣ Load existing jobs (for email diff)
     existing_job = await Job.filter(title="alacrity").first()
 
-    # old_jobs = []
-    # if existing_job and existing_job.jobs:
-    #     old_jobs = json.loads(existing_job.jobs)
     old_jobs = []
     if existing_job and existing_job.jobs:
         if isinstance(existing_job.jobs, str):
@@ -253,27 +360,36 @@ async def alacrity_scrap():
         elif isinstance(existing_job.jobs, list):
             old_jobs = existing_job.jobs
 
-
-    old_links = {job.get("link") for job in old_jobs if isinstance(job, dict)}
+    # 7️⃣ Find new jobs and send email
     new_jobs = find_new_jobs(old_jobs, ai_filtered_jobs, key="link")
+    logger.info(f"Found {len(new_jobs)} new Alacrity jobs")
 
-    # Send email only if new jobs exist
-    if new_jobs and notify_email:
-        email_service.send_new_jobs_email(
-            to_email=notify_email,
-            jobs=new_jobs
-        )
+    if new_jobs:
+        email_service = JobNotificationEmailService()
+        notify_email = os.getenv("JOB_NOTIFICATION_EMAIL")
+        if notify_email:
+            try:
+                email_service.send_new_jobs_email(
+                    to_email=notify_email,
+                    jobs=new_jobs
+                )
+            except Exception as e:
+                logger.error(f"Failed to send email notification: {str(e)}")
 
-    # Save updated jobs
+    # 8️⃣ Save to database
+    jobs_json = json.dumps(ai_filtered_jobs, ensure_ascii=False, indent=4)
+    
     if existing_job:
         existing_job.jobs = jobs_json
         await existing_job.save()
     else:
         await Job.create(title="alacrity", jobs=jobs_json)
 
+    # 9️⃣ Return response
     return {
         "message": "Alacrity jobs scraping done",
         "new_jobs_found": len(new_jobs),
+        "total_jobs": len(ai_filtered_jobs),
         "jobs": ai_filtered_jobs
     }
 
@@ -286,54 +402,140 @@ async def alacrity_scrap():
 
 
 
-@router.get("/tacares-scrape")
-async def tacares_scrape():
-    job_details = await tacares_job_details()
-
+@router.get("/sedgwick-scrape")
+async def sedgwick_scrape():
+    """
+    Scrape Sedgwick job listings for Housing Coordinator positions
+    Returns job details and sends email notification for new jobs
+    """
+    # Import here to avoid circular imports
+    # Adjust import based on your project structure
+    # from services.email_service import JobNotificationEmailService  # Adjust import
+    
+    # Scrape jobs
+    job_details_list = scrape_sedgwick_jobs()
+    
+    if not job_details_list:
+        return {
+            "message": "No jobs found or scraping failed",
+            "success": False,
+            "jobs_found": 0,
+            "new_jobs": []
+        }
+    
+    # Email service setup
     email_service = JobNotificationEmailService()
     notify_email = os.getenv("JOB_NOTIFICATION_EMAIL")
-
-    existing_job = await Job.filter(title="tacares").first()
-
-    is_new_job = True
-
+    
+    # Get existing jobs from database
+    existing_job = await Job.filter(title="sedgwick").first()
+    
+    new_jobs = []
+    existing_job_ids = set()
+    
+    # Parse existing jobs
     if existing_job and existing_job.jobs:
         if isinstance(existing_job.jobs, str):
-            old_job = json.loads(existing_job.jobs)
+            old_jobs = json.loads(existing_job.jobs)
         elif isinstance(existing_job.jobs, dict):
-            old_job = existing_job.jobs
+            old_jobs = existing_job.jobs
+        elif isinstance(existing_job.jobs, list):
+            old_jobs = existing_job.jobs
         else:
-            old_job = None
-
-        if (
-            isinstance(old_job, dict)
-            and old_job.get("url") == job_details.get("url")
-        ):
-            is_new_job = False
-
-
-    # Send email ONLY if job is new
-    if is_new_job and notify_email:
-        email_service.send_new_jobs_email(
-            to_email=notify_email,
-            jobs=[job_details]  # wrap in list to reuse email template
-        )
-
-    # Save / update job
-    job_json = json.dumps(job_details, ensure_ascii=False, indent=4)
-
+            old_jobs = []
+        
+        # Handle both single job dict and list of jobs
+        if isinstance(old_jobs, dict):
+            old_jobs = [old_jobs]
+        
+        # Get existing job IDs
+        for job in old_jobs:
+            if isinstance(job, dict) and job.get('job_id'):
+                existing_job_ids.add(job['job_id'])
+    
+    # Check for new jobs
+    for job in job_details_list:
+        if job.get('job_id') not in existing_job_ids:
+            new_jobs.append(job)
+    
+    # Send email ONLY if there are new jobs
+    if new_jobs and notify_email:
+        try:
+            email_service.send_new_jobs_email(
+                to_email=notify_email,
+                jobs=new_jobs
+            )
+            pass  # Uncomment above when email service is ready
+        except Exception as e:
+            pass  # Log error but don't fail the request
+    
+    # Save/update jobs in database
+    jobs_json = json.dumps(job_details_list, ensure_ascii=False, indent=2)
+    
     if existing_job:
-        existing_job.jobs = job_json
+        existing_job.jobs = jobs_json
         await existing_job.save()
+        db_id = existing_job.id
     else:
-        existing_job = await Job.create(title="tacares", jobs=job_json)
-
+        new_record = await Job.create(title="sedgwick", jobs=jobs_json)
+        db_id = new_record.id
+    
     return {
-        "message": "Tacares job scraping done",
-        "new_job_found": is_new_job,
-        "job_details": job_details,
-        "db_id": existing_job.id,
+        "message": "Sedgwick job scraping completed successfully",
+        "success": True,
+        "jobs_found": len(job_details_list),
+        "new_jobs_count": len(new_jobs),
+        "new_jobs": new_jobs,
+        "all_jobs": job_details_list,
+        "db_id": db_id,
     }
+# async def tacares_scrape():
+#     job_details = await tacares_job_details()
+
+#     email_service = JobNotificationEmailService()
+#     notify_email = os.getenv("JOB_NOTIFICATION_EMAIL")
+
+#     existing_job = await Job.filter(title="tacares").first()
+
+#     is_new_job = True
+
+#     if existing_job and existing_job.jobs:
+#         if isinstance(existing_job.jobs, str):
+#             old_job = json.loads(existing_job.jobs)
+#         elif isinstance(existing_job.jobs, dict):
+#             old_job = existing_job.jobs
+#         else:
+#             old_job = None
+
+#         if (
+#             isinstance(old_job, dict)
+#             and old_job.get("url") == job_details.get("url")
+#         ):
+#             is_new_job = False
+
+
+#     # Send email ONLY if job is new
+#     if is_new_job and notify_email:
+#         email_service.send_new_jobs_email(
+#             to_email=notify_email,
+#             jobs=[job_details]  # wrap in list to reuse email template
+#         )
+
+#     # Save / update job
+#     job_json = json.dumps(job_details, ensure_ascii=False, indent=4)
+
+#     if existing_job:
+#         existing_job.jobs = job_json
+#         await existing_job.save()
+#     else:
+#         existing_job = await Job.create(title="tacares", jobs=job_json)
+
+#     return {
+#         "message": "Tacares job scraping done",
+#         "new_job_found": is_new_job,
+#         "job_details": job_details,
+#         "db_id": existing_job.id,
+#     }
 
 
 @router.post("/apply-on-alacrity")
@@ -502,7 +704,7 @@ async def get_all_jobs(position: str = "Housing Scheme"):
 @router.get("/get")
 async def jobs():
     jobs = await Job.all()
-    print("--------------length of job--------------", len(jobs))
+    # print("--------------length of job--------------", len(jobs))
     if not jobs:
         raise HTTPException(404, "Jobs not found.")
     return {"jobs": jobs}

@@ -218,9 +218,13 @@ async def job_scraper():
         driver.quit()
 
 
+
 async def scrape_current_jobs(driver, seen_urls):
-    """Scrape all jobs currently visible on the page"""
+    """Scrape all jobs currently visible on the page and filter for Resident Specialist roles"""
     jobs = []
+    
+    # Define target job title keywords
+    TARGET_KEYWORDS = ["resident specialist"]
     
     # Find all job links
     job_links = driver.find_elements(By.CSS_SELECTOR, "a[href*='/jobs/']")
@@ -242,6 +246,12 @@ async def scrape_current_jobs(driver, seen_urls):
                 title = title_el.text.strip()
             except:
                 title = "No title"
+            
+            # 🔍 FILTER: Check if title matches "Resident Specialist"
+            title_lower = title.lower()
+            if not any(keyword in title_lower for keyword in TARGET_KEYWORDS):
+                # print(f"    ⏭️  Skipped: {title} (not a Resident Specialist role)")
+                continue  # Skip this job if it doesn't match
             
             # Extract location (p tag with font-weight: 600)
             try:
@@ -297,6 +307,7 @@ async def scrape_current_jobs(driver, seen_urls):
             jobs.append(job)
             seen_urls.add(job_url)
             
+            logger.info(f"✓ Matched: {title} | {location} | {job_type}")
             # print(f"    ✓ {title}")
             # print(f"      📍 {location}")
             # print(f"      🏷️  {job_type}")
@@ -306,7 +317,100 @@ async def scrape_current_jobs(driver, seen_urls):
             # print(f"    ✗ Error parsing job: {e}")
             continue
     
+    logger.info(f"Filtered to {len(jobs)} Resident Specialist jobs out of {len(job_links)} total listings")
     return jobs
+
+
+
+# async def scrape_current_jobs(driver, seen_urls):
+#     """Scrape all jobs currently visible on the page"""
+#     jobs = []
+    
+#     # Find all job links
+#     job_links = driver.find_elements(By.CSS_SELECTOR, "a[href*='/jobs/']")
+    
+#     # print(f"  Processing {len(job_links)} job listings...")
+    
+#     for job_link in job_links:
+#         try:
+#             # Get the job URL
+#             job_url = job_link.get_attribute("href")
+            
+#             # Skip if already processed
+#             if job_url in seen_urls:
+#                 continue
+            
+#             # Extract job title (h2 tag)
+#             try:
+#                 title_el = job_link.find_element(By.CSS_SELECTOR, "h2[data-testid='typography']")
+#                 title = title_el.text.strip()
+#             except:
+#                 title = "No title"
+            
+#             # Extract location (p tag with font-weight: 600)
+#             try:
+#                 # Find p tag with specific style containing font-weight: 600
+#                 location_els = job_link.find_elements(By.CSS_SELECTOR, "p[data-testid='typography']")
+#                 location = "No location"
+#                 for el in location_els:
+#                     style = el.get_attribute("style")
+#                     if "font-weight: 600" in style or "font-weight:600" in style:
+#                         location = el.text.strip()
+#                         break
+#             except:
+#                 location = "No location"
+            
+#             # Extract job type tag (e.g., "Full Time", "Hybrid")
+#             try:
+#                 tag_el = job_link.find_element(By.CSS_SELECTOR, "div[data-testid*='-tag'] p")
+#                 job_type = tag_el.text.strip()
+#             except:
+#                 job_type = "Not specified"
+            
+#             # Extract description (p tag with font-weight: normal, comes after the tag)
+#             try:
+#                 # Find all p tags with data-testid='typography'
+#                 all_p_tags = job_link.find_elements(By.CSS_SELECTOR, "p[data-testid='typography']")
+#                 description = "No description"
+                
+#                 for p in all_p_tags:
+#                     style = p.get_attribute("style")
+#                     text = p.text.strip()
+                    
+#                     # Look for p tag with font-weight: normal and has substantial text
+#                     if ("font-weight: normal" in style or "font-weight:normal" in style) and len(text) > 20:
+#                         description = text
+#                         break
+#                     # Fallback: if text is long and contains "..." it's likely the description
+#                     elif len(text) > 50 and ("..." in text or len(text) > 100):
+#                         description = text
+#                         break
+                        
+#             except Exception as e:
+#                 description = "No description"
+#                 # print(f"      ⚠️  Description extraction error: {e}")
+            
+#             job = {
+#                 "title": title,
+#                 "url": job_url,
+#                 "location": location,
+#                 "job_type": job_type,
+#                 "description": description,
+#             }
+            
+#             jobs.append(job)
+#             seen_urls.add(job_url)
+            
+#             # print(f"    ✓ {title}")
+#             # print(f"      📍 {location}")
+#             # print(f"      🏷️  {job_type}")
+#             # print(f"      📝 {description[:80]}..." if len(description) > 80 else f"      📝 {description}")
+            
+#         except Exception as e:
+#             # print(f"    ✗ Error parsing job: {e}")
+#             continue
+    
+#     return jobs
 
 
 
@@ -412,6 +516,7 @@ async def enrich_jobs_with_details(jobs):
     with salary + full_description_html by visiting the detail page.
     """
     chrome_options = Options()
+    chrome_options.binary_location = "/usr/bin/google-chrome" # comment this for windows
     chrome_options.add_argument("--headless=new")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
@@ -478,26 +583,77 @@ async def description_scraper(url):
     return json.dumps(data, indent=4)
 
 
+# async def alacrity_jobs():
+#     url = "https://alacritysolutions.applytojob.com/apply/"
+#     response = requests.get(url)
+#     response.raise_for_status()
+#     soup = BeautifulSoup(response.text, "html.parser")
+#     jobs = []
+#     for job_item in soup.find_all("li", class_="list-group-item"):
+#         a_tag = job_item.find("a")
+#         if not a_tag:
+#             continue
+#         title = a_tag.get_text(strip=True)
+#         link = a_tag["href"]
+#         location_tag = job_item.find("ul", class_="list-inline list-group-item-text")
+#         location = None
+#         if location_tag:
+#             li = location_tag.find("li")
+#             if li:
+#                 location = li.get_text(strip=True).replace("\xa0", " ")
+#         jobs.append({"title": title, "link": link, "location": location})
+#     return jobs
+
+
 async def alacrity_jobs():
-    url = "https://alacritysolutions.applytojob.com/apply/"
-    response = requests.get(url)
-    response.raise_for_status()
-    soup = BeautifulSoup(response.text, "html.parser")
-    jobs = []
-    for job_item in soup.find_all("li", class_="list-group-item"):
-        a_tag = job_item.find("a")
-        if not a_tag:
-            continue
-        title = a_tag.get_text(strip=True)
-        link = a_tag["href"]
-        location_tag = job_item.find("ul", class_="list-inline list-group-item-text")
-        location = None
-        if location_tag:
-            li = location_tag.find("li")
-            if li:
-                location = li.get_text(strip=True).replace("\xa0", " ")
-        jobs.append({"title": title, "link": link, "location": location})
-    return jobs
+    """Scrape jobs and filter for Housing Account Manager roles"""
+    
+    # Define target job title keywords
+    TARGET_KEYWORDS = ["housing account manager"]
+    
+    try:
+        url = "https://alacritysolutions.applytojob.com/apply/"
+        response = requests.get(url, timeout=30)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, "html.parser")
+        
+        jobs = []
+        total_scraped = 0
+        
+        for job_item in soup.find_all("li", class_="list-group-item"):
+            total_scraped += 1
+            a_tag = job_item.find("a")
+            if not a_tag:
+                continue
+            
+            title = a_tag.get_text(strip=True)
+            link = a_tag["href"]
+            
+            # 🔍 FILTER: Check if title matches "Housing Account Manager"
+            title_lower = title.lower()
+            if not any(keyword in title_lower for keyword in TARGET_KEYWORDS):
+                logger.info(f"⏭️  Skipped: {title} (not a Housing Account Manager role)")
+                continue  # Skip non-matching jobs
+            
+            location_tag = job_item.find("ul", class_="list-inline list-group-item-text")
+            location = None
+            if location_tag:
+                li = location_tag.find("li")
+                if li:
+                    location = li.get_text(strip=True).replace("\xa0", " ")
+            
+            jobs.append({"title": title, "link": link, "location": location})
+            logger.info(f"✓ Matched: {title} | {location}")
+        
+        logger.info(f"Filtered to {len(jobs)} Housing Account Manager jobs out of {total_scraped} total listings")
+        return jobs
+        
+    except requests.RequestException as e:
+        logger.error(f"Network error while scraping Alacrity jobs: {str(e)}")
+        raise  # Re-raise to be caught by the endpoint
+    except Exception as e:
+        logger.error(f"Error scraping Alacrity jobs: {str(e)}")
+        raise
 
 
 async def alacrity_job_detail(job_url):
