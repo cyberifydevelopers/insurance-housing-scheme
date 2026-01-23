@@ -3,6 +3,7 @@ import os
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from helpers.jobs import crsth_job_update, alacrity_job_update, alacrity_job_detail
+from helpers.sedgwick_jobs import scrape_sedgwick_jobs
 
 scheduler = AsyncIOScheduler()
 
@@ -13,6 +14,7 @@ async def scrape_jobs():
         await crsth_job_update()
         await alacrity_job_detail()
         await alacrity_job_update()
+        await scrape_sedgwick_jobs()
         print("✅ Jobs updated successfully.")
     except Exception as e:
         print(f"❌ Error during job update: {e}")
@@ -37,7 +39,7 @@ async def lifespan(app):
 
     scheduler.add_job(
         scrape_jobs,
-        trigger=CronTrigger(hour=0, minute=0),
+        trigger=CronTrigger(hour="*/4", minute=0),
         id="update_jobs",
         replace_existing=True,
     )
