@@ -126,6 +126,19 @@ def extract_job_details(driver, job_url: str) -> Optional[Dict]:
         return None
 
 
+def is_valid_housing_coordinator_job(title: str) -> bool:
+    """Check if the job title contains 'Housing Coordinator' keyword"""
+    if not title:
+        return False
+    
+    # Convert to lowercase for case-insensitive matching
+    title_lower = title.lower()
+    keyword_lower = SEARCH_KEYWORD.lower()
+    
+    # Check if the title contains "housing coordinator"
+    return keyword_lower in title_lower
+
+
 def scrape_sedgwick_jobs() -> List[Dict]:
     """Main scraping function that returns list of job details"""
     chrome_options = Options()
@@ -278,16 +291,17 @@ def scrape_sedgwick_jobs() -> List[Dict]:
         
         for job in jobs_data:
             job_details = extract_job_details(driver, job['url'])
-            if job_details:
+            if job_details and is_valid_housing_coordinator_job(job_details['title']):
                 detailed_jobs.append(job_details)
+                print(f"✅ Valid job found: {job_details['title']}")
+            elif job_details:
+                print(f"❌ Filtered out: {job_details['title']} (doesn't contain '{SEARCH_KEYWORD}')")
             time.sleep(2)
         
+        print(f"\n📊 Total valid jobs found: {len(detailed_jobs)}")
         return detailed_jobs
         
     except Exception as e:
         return []
     finally:
         driver.quit()
-
-
-

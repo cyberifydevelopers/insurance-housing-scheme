@@ -8,7 +8,7 @@ from controllers.job_controller import sedgwick_scrape,alacrity_scrap,scrape_job
 scheduler = AsyncIOScheduler()
 
 
-async def scrape_jobs():
+async def scrape_jobs_task():
     print("🟡 Jobs update started...")
     try:
         await alacrity_scrap()
@@ -38,13 +38,13 @@ async def lifespan(app):
     print("📦 Database initialized successfully.")
 
     scheduler.add_job(
-        scrape_jobs,
+        scrape_jobs_task,
         trigger=CronTrigger(hour="*/4", minute=0),
         id="update_jobs",
         replace_existing=True,
     )
     scheduler.start()
-    print("✅ Scheduler started.")
+    print("✅ Scheduler started. Jobs will update every 2 minutes.")
     yield
     print("🛑 Shutting down FastAPI...")
     scheduler.shutdown()
