@@ -39,7 +39,7 @@ async def lifespan(app):
 
     scheduler.add_job(
         scrape_jobs_task,
-        trigger=CronTrigger(hour="*/4", minute=0),
+        trigger=CronTrigger(minute="*/2"),
         id="update_jobs",
         replace_existing=True,
     )

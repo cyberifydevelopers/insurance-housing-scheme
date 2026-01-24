@@ -3,6 +3,7 @@ import json
 import time
 import tempfile
 from typing import List, Dict, Optional
+from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -34,6 +35,7 @@ def extract_job_details(driver, job_url: str) -> Optional[Dict]:
             'posted_date': '',
             'job_id': '',
             'full_description': '',
+            'scraped_at': datetime.now().isoformat(),  # Add timestamp
         }
         
         # Extract job title
