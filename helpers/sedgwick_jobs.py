@@ -180,14 +180,17 @@ def scrape_sedgwick_jobs() -> List[Dict]:
         for by, selector in selectors:
             try:
                 join_button = wait.until(EC.element_to_be_clickable((by, selector)))
+                print(f"✅ Join Button  found")
                 break
             except TimeoutException:
                 continue
         
         if not join_button:
+            print(f"✅No Join Button found")
             return []
         
         join_url = join_button.get_attribute('href')
+        print(f"✅ Join URL  found")
         if join_url:
             driver.get(join_url)
             time.sleep(5)

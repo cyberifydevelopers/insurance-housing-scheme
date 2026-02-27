@@ -235,17 +235,37 @@ async def alacrity_scrap():
     new_jobs = find_new_jobs(old_jobs, ai_filtered_jobs, key="link")
     logger.info(f"Found {len(new_jobs)} new Alacrity jobs")
 
+    # if new_jobs:
+    #     email_service = JobNotificationEmailService()
+    #     notify_email = os.getenv("JOB_NOTIFICATION_EMAIL")
+    #     if notify_email:
+    #         try:
+    #             email_service.send_new_jobs_email(
+    #                 to_email=notify_email,
+    #                 jobs=new_jobs
+    #             )
+    #         except Exception as e:
+    #             logger.error(f"Failed to send email notification: {str(e)}")
+    # 1. Protect the constructor itself
+    # In your endpoint, replace the email block with this:
     if new_jobs:
-        email_service = JobNotificationEmailService()
-        notify_email = os.getenv("JOB_NOTIFICATION_EMAIL")
-        if notify_email:
+        raw_emails = os.getenv("JOB_NOTIFICATION_EMAIL", "")
+        notify_emails = [e.strip() for e in raw_emails.split(",") if e.strip()]
+        
+        print(f"DEBUG - Sending to {len(notify_emails)} recipients: {notify_emails}")
+        
+        if notify_emails:
             try:
-                email_service.send_new_jobs_email(
-                    to_email=notify_email,
-                    jobs=new_jobs
-                )
+                email_service = JobNotificationEmailService()
+                email_service.send_new_jobs_email(to_emails=notify_emails, jobs=new_jobs)
             except Exception as e:
-                logger.error(f"Failed to send email notification: {str(e)}")
+                print(f"DEBUG - Email FAILED: {type(e).__name__}: {str(e)}")
+                import traceback
+                traceback.print_exc()  # prints full stack trace to console
+        else:
+            print("DEBUG - notify_email is None/empty, skipping email entirely")
+    else:
+        print(f"DEBUG - new_jobs is empty: {new_jobs}")
 
     # 8️⃣ Save to database
     jobs_json = json.dumps(ai_filtered_jobs, ensure_ascii=False, indent=4)
