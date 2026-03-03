@@ -59,7 +59,7 @@ async def save_traning_material(data: CreateTraningMaterial):
 
 @router.get("/get/{course_id}/{step_id}")
 async def get_traning_material(course_id: int, step_id: int):
-    materials = await TrainingMaterial.filter(course_id=course_id, step_id=step_id).all()
+    materials = await TrainingMaterial.filter(course_id=course_id, step_id=step_id).order_by("id").all()
     return {"materials": materials}
 
 
